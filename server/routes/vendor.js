@@ -178,7 +178,7 @@ router.post('/createMenuItem', async (req, res) => {
 
 router.get('/getMenuItems', async (req, res) => {
   try {
-    const { stall_id } = req.query
+    const { stall_id } = req.body
     const { data, error } = await supabase
       .from('menu_items')
       .select()
@@ -192,7 +192,7 @@ router.get('/getMenuItems', async (req, res) => {
 
 router.get('/getSingleStall', async (req, res) => {
   try {
-    const { stall_id } = req.query
+    const { stall_id } = req.body
     const { data, error } = await supabase
       .from('stalls')
       .select()
