@@ -57,12 +57,8 @@ router.post('/createVendorProfile', async (req, res) => {
 
 router.post('/createStall', async (req, res) => {
   try {
-    const { vendor_id, name, lat, lng, cuisine, hygiene_score } = req.body
-
-    // Construct the location using PostGIS functions (ST_SetSRID and ST_MakePoint)
-    // const location = `ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)` // Make sure to use a valid SQL function here
-
-    // Insert into the stalls table
+    const { vendor_id, name, lat, lng, cuisine, hygiene_score, is_verified } =
+      req.body
     const { data, error } = await supabase
       .from('stalls')
       .insert({
@@ -71,6 +67,7 @@ router.post('/createStall', async (req, res) => {
         location: `POINT(${lng} ${lat})`, // Insert the geospatial location as a valid SQL statement
         cuisine,
         hygiene_score,
+        is_verified,
       })
       .select()
 
@@ -143,6 +140,19 @@ router.post('/createOrder', async (req, res) => {
   }
 })
 
+// CREATE TABLE menu_items (
+//     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),  -- Unique menu item ID
+//     stall_id UUID REFERENCES stalls(id) ON DELETE CASCADE,  -- Reference to the stall (foreign key)
+//     name TEXT NOT NULL,  -- Name of the menu item
+//     description TEXT,  -- Description of the menu item
+//     price NUMERIC(10, 2) NOT NULL,  -- Price of the menu item
+//     category TEXT,  -- Optional category (e.g., appetizer, main course, dessert)
+//     image_url TEXT,  -- Optional image of the menu item
+//     traits JSONB DEFAULT '{}',  -- JSONB column to store dynamic traits
+//     created_at TIMESTAMP DEFAULT now(),  -- When the item was added to the menu
+//     updated_at TIMESTAMP DEFAULT now()  -- When the item was last updated
+// );
+
 router.post('/createMenuItem', async (req, res) => {
   try {
     const { stall_id, name, description, price, category, image_url, traits } =
@@ -165,4 +175,5 @@ router.post('/createMenuItem', async (req, res) => {
     res.status(400).json({ error: error.message })
   }
 })
+
 export default router

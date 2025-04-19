@@ -69,43 +69,6 @@ router.post('/createReview', async (req, res) => {
   }
 })
 
-// CREATE TABLE visits (
-//   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-//   user_id UUID REFERENCES users(id),
-//   stall_id UUID REFERENCES stalls(id),
-//   visited_at TIMESTAMP DEFAULT now()
-// );
-
-router.post('/createVisit', async (req, res) => {
-  try {
-    const { user_id, stall_id } = req.body
-    const { data, error } = await supabase
-      .from('visits')
-      .insert({
-        user_id,
-        stall_id,
-      })
-      .select()
-    if (error) throw error
-    res.status(200).json(data)
-  } catch (error) {
-    res.status(400).json({ error: error.message })
-  }
-})
-
-// CREATE TABLE menu_items (
-//     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-//     stall_id UUID REFERENCES stalls(id) ON DELETE CASCADE,
-//     name TEXT NOT NULL,
-//     description TEXT,
-//     price NUMERIC(10, 2) NOT NULL,
-//     category TEXT,
-//     image_url TEXT,
-//     traits JSONB DEFAULT '[]'::jsonb,  -- Flexible tags like spicy, jain, etc.
-//     created_at TIMESTAMP DEFAULT now(),
-//     updated_at TIMESTAMP DEFAULT now()
-// );
-
 //get all reviews for a stall
 router.get('/getReviews/:stall_id', async (req, res) => {
   try {
@@ -156,5 +119,31 @@ router.post('/getNearbyStalls', async (req, res) => {
       .json({ error: 'Something went wrong. Please try again later.' })
   }
 })
+router.post('/getKeywordStalls', async (req, res) => {
+  try {
+    const { keywords } = req.body
 
+    if (!Array.isArray(keywords) || keywords.length === 0) {
+      return res
+        .status(400)
+        .json({ error: 'keywords must be a non-empty array of strings' })
+    }
+
+    // Call Supabase function with keywords
+    const { data, error } = await supabase
+      .rpc('search_menu_items_by_traits_fuzzy', {
+        keywords: keywords,
+      })
+      .select()
+    if (error) {
+      console.error('Supabase RPC error:', error)
+      return res.status(500).json({ error: error.message })
+    }
+
+    res.status(200).json(data)
+  } catch (err) {
+    console.error('Server error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
 export default router
