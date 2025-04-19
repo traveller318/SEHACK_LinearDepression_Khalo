@@ -1,10 +1,11 @@
-import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, FlatList, Modal, TextInput, Alert, ActivityIndicator, ScrollView } from 'react-native';
-import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, FlatList, Modal, TextInput, Alert, ActivityIndicator, ScrollView, Animated, Easing, Image, PanResponder } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MaterialIcons, Ionicons, FontAwesome, AntDesign, Feather } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons, FontAwesome, AntDesign, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import * as Location from 'expo-location';
 import { useAuth } from '../../contexts/AuthContext';
+import { LinearGradient } from 'expo-linear-gradient';
 
 type Comment = {
   id: string;
@@ -44,6 +45,45 @@ export default function CommunityScreen() {
   const [error, setError] = useState('');
   const [showComments, setShowComments] = useState<{[key: string]: boolean}>({});
   const [activeCategory, setActiveCategory] = useState('Recent');
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.1,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        })
+      ])
+    ).start();
+  }, []);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 600,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -344,163 +384,328 @@ export default function CommunityScreen() {
     }
   }, [activeCategory, posts]);
 
-  const renderPost = ({ item }: { item: Post }) => (
-    <View style={styles.postCard}>
-      {/* Post Header with User Info */}
-      <View style={styles.userInfoContainer}>
-        <View style={styles.userAvatar}>
-          <Text style={styles.userInitial}>{(item.user_name?.[0] || 'U').toUpperCase()}</Text>
-        </View>
-        <View style={styles.userTextContainer}>
-          <Text style={styles.userName}>{item.user_name || 'Anonymous User'}</Text>
-          <View style={styles.postMetaContainer}>
-            <Text style={styles.timeAgo}>{formatDate(item.created_at)}</Text>
-            {item.distance !== undefined && (
-              <View style={styles.distanceBadge}>
-                <Feather name="map-pin" size={10} color="#666" />
-                <Text style={styles.distanceText}>{item.distance.toFixed(1)} km</Text>
-              </View>
-            )}
+  const renderPost = ({ item, index }: { item: Post; index: number }) => {
+    // Create staggered animation for each item
+    const itemFadeAnim = useRef(new Animated.Value(0)).current;
+    const itemTranslateY = useRef(new Animated.Value(50)).current;
+    const swipeAnim = useRef(new Animated.Value(0)).current;
+    
+    // Add swipe functionality for like/dislike
+    const panResponder = useRef(
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onPanResponderMove: (_, gestureState) => {
+          // Only allow horizontal swiping up to a limit
+          if (Math.abs(gestureState.dx) < 100) {
+            swipeAnim.setValue(gestureState.dx);
+          }
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          // Threshold for triggering actions
+          if (gestureState.dx > 80) {
+            // Swiped right - like
+            Animated.timing(swipeAnim, {
+              toValue: 100,
+              duration: 200,
+              useNativeDriver: true,
+            }).start(() => {
+              handleVote(item.id, 'up');
+              Animated.timing(swipeAnim, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+              }).start();
+            });
+          } else if (gestureState.dx < -80) {
+            // Swiped left - dislike
+            Animated.timing(swipeAnim, {
+              toValue: -100,
+              duration: 200,
+              useNativeDriver: true,
+            }).start(() => {
+              handleVote(item.id, 'down');
+              Animated.timing(swipeAnim, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+              }).start();
+            });
+          } else {
+            // Return to center
+            Animated.spring(swipeAnim, {
+              toValue: 0,
+              friction: 5,
+              useNativeDriver: true,
+            }).start();
+          }
+        },
+      })
+    ).current;
+    
+    useEffect(() => {
+      Animated.parallel([
+        Animated.timing(itemFadeAnim, {
+          toValue: 1,
+          duration: 500,
+          delay: index * 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(itemTranslateY, {
+          toValue: 0,
+          duration: 400,
+          delay: index * 100,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        })
+      ]).start();
+    }, []);
+
+    // Calculate background colors and rotation based on swipe
+    const rotateCard = swipeAnim.interpolate({
+      inputRange: [-100, 0, 100],
+      outputRange: ['-5deg', '0deg', '5deg'],
+    });
+    
+    const likeOpacity = swipeAnim.interpolate({
+      inputRange: [0, 20, 100],
+      outputRange: [0, 0.5, 1],
+      extrapolate: 'clamp',
+    });
+    
+    const dislikeOpacity = swipeAnim.interpolate({
+      inputRange: [-100, -20, 0],
+      outputRange: [1, 0.5, 0],
+      extrapolate: 'clamp',
+    });
+    
+    return (
+      <Animated.View 
+        style={[
+          styles.postCard,
+          {
+            opacity: itemFadeAnim,
+            transform: [
+              { translateY: itemTranslateY },
+              { translateX: swipeAnim },
+              { rotate: rotateCard }
+            ]
+          }
+        ]}
+        {...panResponder.panHandlers}
+      >
+        {/* Swipe Indicators */}
+        <Animated.View style={[styles.likeIndicator, { opacity: likeOpacity }]}>
+          <AntDesign name="like1" size={40} color="#FF5200" />
+        </Animated.View>
+        
+        <Animated.View style={[styles.dislikeIndicator, { opacity: dislikeOpacity }]}>
+          <AntDesign name="dislike1" size={40} color="#666" />
+        </Animated.View>
+        
+        {/* Post Header with User Info */}
+        <View style={styles.userInfoContainer}>
+          <LinearGradient
+            colors={['#FF8A5B', '#FF5200']}
+            style={styles.userAvatar}
+          >
+            <Text style={styles.userInitial}>{(item.user_name?.[0] || 'U').toUpperCase()}</Text>
+          </LinearGradient>
+          <View style={styles.userTextContainer}>
+            <Text style={styles.userName}>{item.user_name || 'Anonymous User'}</Text>
+            <View style={styles.postMetaContainer}>
+              <Text style={styles.timeAgo}>{formatDate(item.created_at)}</Text>
+              {item.distance !== undefined && (
+                <View style={styles.distanceBadge}>
+                  <Feather name="map-pin" size={10} color="#666" />
+                  <Text style={styles.distanceText}>{item.distance.toFixed(1)} km</Text>
+                </View>
+              )}
+            </View>
           </View>
+          <TouchableOpacity style={styles.moreOptionsButton}>
+            <MaterialCommunityIcons name="dots-vertical" size={22} color="#666" />
+          </TouchableOpacity>
         </View>
-      </View>
-      
-      {/* Post Title and Content */}
-      <View style={styles.postContentContainer}>
-        <Text style={styles.postTitle}>{item.title}</Text>
-        <Text style={styles.postContent}>{item.content}</Text>
-      </View>
-      
-      {/* Tags */}
-      {item.tags && item.tags.length > 0 && (
-        <View style={styles.tagsContainer}>
-          {item.tags.map((tag, index) => (
-            <View 
-              key={index} 
-              style={[
-                styles.tag,
-                (tag === 'Important' || tag === 'important') && styles.importantTag
-              ]}
-            >
-              <Text 
+        
+        {/* Post Title and Content */}
+        <View style={styles.postContentContainer}>
+          <Text style={styles.postTitle}>{item.title}</Text>
+          <Text style={styles.postContent}>{item.content}</Text>
+        </View>
+        
+        {/* Tags */}
+        {item.tags && item.tags.length > 0 && (
+          <View style={styles.tagsContainer}>
+            {item.tags.map((tag, index) => (
+              <View 
+                key={index} 
                 style={[
-                  styles.tagText,
-                  (tag === 'Important' || tag === 'important') && styles.importantTagText
+                  styles.tag,
+                  (tag === 'Important' || tag === 'important') && styles.importantTag
                 ]}
               >
-                {tag}
+                {(tag === 'Important' || tag === 'important') && (
+                  <MaterialIcons name="priority-high" size={12} color="#FF5200" style={{marginRight: 4}} />
+                )}
+                <Text 
+                  style={[
+                    styles.tagText,
+                    (tag === 'Important' || tag === 'important') && styles.importantTagText
+                  ]}
+                >
+                  {tag}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+        
+        {/* Post Actions */}
+        <View style={styles.postActions}>
+          <View style={styles.voteContainer}>
+            <TouchableOpacity 
+              style={[styles.voteButton, item.userVote === 'up' && styles.activeVoteButton]}
+              onPress={() => handleVote(item.id, 'up')}
+            >
+              <AntDesign 
+                name="like1" 
+                size={20} 
+                color={item.userVote === 'up' ? '#FF5200' : '#666'} 
+              />
+              <Text style={[styles.voteCount, item.userVote === 'up' && styles.activeVote]}>
+                {item.upvotes || 0}
               </Text>
-            </View>
-          ))}
-        </View>
-      )}
-      
-      {/* Post Actions */}
-      <View style={styles.postActions}>
-        <View style={styles.voteContainer}>
-          <TouchableOpacity 
-            style={[styles.voteButton, item.userVote === 'up' && styles.activeVoteButton]}
-            onPress={() => handleVote(item.id, 'up')}
-          >
-            <AntDesign 
-              name="like1" 
-              size={20} 
-              color={item.userVote === 'up' ? '#FF5200' : '#666'} 
-            />
-            <Text style={[styles.voteCount, item.userVote === 'up' && styles.activeVote]}>
-              {item.upvotes || 0}
-            </Text>
-          </TouchableOpacity>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.voteButton, item.userVote === 'down' && styles.activeVoteButton]}
+              onPress={() => handleVote(item.id, 'down')}
+            >
+              <AntDesign 
+                name="dislike1" 
+                size={20} 
+                color={item.userVote === 'down' ? '#FF5200' : '#666'} 
+              />
+              <Text style={[styles.voteCount, item.userVote === 'down' && styles.activeVote]}>
+                {item.downvotes || 0}
+              </Text>
+            </TouchableOpacity>
+          </View>
           
           <TouchableOpacity 
-            style={[styles.voteButton, item.userVote === 'down' && styles.activeVoteButton]}
-            onPress={() => handleVote(item.id, 'down')}
+            style={[
+              styles.commentButton,
+              showComments[item.id] && styles.activeCommentButton
+            ]}
+            onPress={() => toggleComments(item.id)}
           >
-            <AntDesign 
-              name="dislike1" 
-              size={20} 
-              color={item.userVote === 'down' ? '#FF5200' : '#666'} 
+            <FontAwesome 
+              name="comment" 
+              size={18} 
+              color={showComments[item.id] ? "#FF5200" : "#666"} 
             />
-            <Text style={[styles.voteCount, item.userVote === 'down' && styles.activeVote]}>
-              {item.downvotes || 0}
+            <Text style={[
+              styles.commentCount,
+              showComments[item.id] && styles.activeCommentCount
+            ]}>
+              {item.comments?.length || 0} Comments
             </Text>
           </TouchableOpacity>
         </View>
         
-        <TouchableOpacity 
-          style={[
-            styles.commentButton,
-            showComments[item.id] && styles.activeCommentButton
-          ]}
-          onPress={() => toggleComments(item.id)}
-        >
-          <FontAwesome 
-            name="comment" 
-            size={18} 
-            color={showComments[item.id] ? "#FF5200" : "#666"} 
-          />
-          <Text style={[
-            styles.commentCount,
-            showComments[item.id] && styles.activeCommentCount
-          ]}>
-            {item.comments?.length || 0} Comments
-          </Text>
-        </TouchableOpacity>
-      </View>
-      
-      {/* Comments Section */}
-      {showComments[item.id] && item.comments && (
-        <View style={styles.commentsSection}>
-          <View style={styles.commentsDivider} />
-          <Text style={styles.commentsHeader}>Comments</Text>
-          
-          {item.comments.map((comment) => (
-            <View key={comment.id} style={styles.commentItem}>
-              <View style={styles.commentUserInfo}>
-                <View style={styles.commentUserAvatar}>
-                  <Text style={styles.commentUserInitial}>
-                    {comment.user_name[0].toUpperCase()}
-                  </Text>
+        {/* Comments Section */}
+        {showComments[item.id] && item.comments && (
+          <View style={styles.commentsSection}>
+            <View style={styles.commentsDivider} />
+            <Text style={styles.commentsHeader}>Comments</Text>
+            
+            {item.comments.map((comment) => (
+              <View key={comment.id} style={styles.commentItem}>
+                <View style={styles.commentUserInfo}>
+                  <LinearGradient
+                    colors={['#F0F0F0', '#E0E0E0']}
+                    style={styles.commentUserAvatar}
+                  >
+                    <Text style={styles.commentUserInitial}>
+                      {comment.user_name[0].toUpperCase()}
+                    </Text>
+                  </LinearGradient>
+                  <View style={styles.commentUserTextContainer}>
+                    <Text style={styles.commentUser}>{comment.user_name}</Text>
+                    <Text style={styles.commentTime}>{formatDate(comment.created_at)}</Text>
+                  </View>
                 </View>
-                <View style={styles.commentUserTextContainer}>
-                  <Text style={styles.commentUser}>{comment.user_name}</Text>
-                  <Text style={styles.commentTime}>{formatDate(comment.created_at)}</Text>
+                <View style={styles.commentContentContainer}>
+                  <Text style={styles.commentContent}>{comment.content}</Text>
+                </View>
+                <View style={styles.commentActions}>
+                  <TouchableOpacity style={styles.commentLikeButton}>
+                    <AntDesign name="like2" size={14} color="#777" />
+                    <Text style={styles.commentActionText}>Like</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.commentReplyButton}>
+                    <Feather name="corner-up-left" size={14} color="#777" />
+                    <Text style={styles.commentActionText}>Reply</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
-              <View style={styles.commentContentContainer}>
-                <Text style={styles.commentContent}>{comment.content}</Text>
+            ))}
+            
+            {/* Add Comment Input */}
+            <View style={styles.addCommentContainer}>
+              <View style={styles.commentInputContainer}>
+                <TextInput
+                  style={styles.commentInput}
+                  placeholder="Add a comment..."
+                  placeholderTextColor="#999"
+                />
               </View>
+              <TouchableOpacity style={styles.sendCommentButton}>
+                <Ionicons name="send" size={18} color="#fff" />
+              </TouchableOpacity>
             </View>
-          ))}
-          
-          {/* Add Comment Input */}
-          <View style={styles.addCommentContainer}>
-            <View style={styles.commentInputContainer}>
-              <TextInput
-                style={styles.commentInput}
-                placeholder="Add a comment..."
-                placeholderTextColor="#999"
-              />
-            </View>
-            <TouchableOpacity style={styles.sendCommentButton}>
-              <Ionicons name="send" size={18} color="#fff" />
-            </TouchableOpacity>
           </View>
-        </View>
-      )}
-    </View>
-  );
+        )}
+      </Animated.View>
+    );
+  };
 
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Community</Text>
-      </View>
+      {/* Header with Animated Background */}
+      <Animated.View 
+        style={[
+          styles.header,
+          {
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }],
+          }
+        ]}
+      >
+        <LinearGradient
+          colors={['#FF8A5B', '#FF5200']}
+          start={[0, 0]}
+          end={[1, 0]}
+          style={styles.headerGradient}
+        >
+          <Text style={styles.headerTitle}>Community</Text>
+        </LinearGradient>
+      </Animated.View>
 
-      {/* Radius Selector */}
-      <View style={styles.radiusContainer}>
-        <Text style={styles.radiusLabel}>Radius: {radius} km</Text>
+      {/* Radius Selector with improved UI */}
+      <Animated.View 
+        style={[
+          styles.radiusContainer,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: Animated.multiply(scrollY, 0.1) }],
+          }
+        ]}
+      >
+        <View style={styles.radiusLabelContainer}>
+          <MaterialIcons name="explore" size={20} color="#FF5200" />
+          <Text style={styles.radiusLabel}>Discovery Radius: {radius} km</Text>
+        </View>
         <Slider
           style={styles.slider}
           minimumValue={1}
@@ -509,12 +714,16 @@ export default function CommunityScreen() {
           value={radius}
           onValueChange={handleRadiusChange}
           minimumTrackTintColor="#FF5200"
-          maximumTrackTintColor="#D3D3D3"
+          maximumTrackTintColor="#FFDED0"
           thumbTintColor="#FF5200"
         />
-      </View>
+        <View style={styles.radiusMinMaxContainer}>
+          <Text style={styles.radiusMinText}>1 km</Text>
+          <Text style={styles.radiusMaxText}>10 km</Text>
+        </View>
+      </Animated.View>
 
-      {/* Category Tabs */}
+      {/* Category Tabs with improved UI */}
       <View style={styles.categoryTabsContainer}>
         <ScrollView 
           horizontal 
@@ -538,6 +747,9 @@ export default function CommunityScreen() {
               >
                 {category}
               </Text>
+              {activeCategory === category && (
+                <View style={styles.activeTabIndicator} />
+              )}
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -551,6 +763,7 @@ export default function CommunityScreen() {
         </View>
       ) : error ? (
         <View style={styles.errorContainer}>
+          <MaterialIcons name="error-outline" size={60} color="#FF5200" style={{marginBottom: 16}} />
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity 
             style={styles.retryButton}
@@ -561,16 +774,24 @@ export default function CommunityScreen() {
         </View>
       ) : filteredPosts.length === 0 ? (
         <View style={styles.emptyContainer}>
+          <Image 
+            source={{uri: 'https://cdn-icons-png.flaticon.com/512/6134/6134065.png'}} 
+            style={styles.emptyImage}
+          />
           <Text style={styles.emptyText}>No posts in this category</Text>
           <Text style={styles.emptySubText}>Try selecting a different category or be the first to post!</Text>
         </View>
       ) : (
-        <FlatList
+        <Animated.FlatList
           data={filteredPosts}
           renderItem={renderPost}
           keyExtractor={item => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.postsList}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false }
+          )}
         />
       )}
       
@@ -582,82 +803,143 @@ export default function CommunityScreen() {
         onRequestClose={() => setCreatePostVisible(false)}
       >
         <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+          <LinearGradient
+            colors={['#FF8A5B', '#FF5200']}
+            start={[0, 0]}
+            end={[1, 0]}
+            style={styles.modalHeader}
+          >
             <Text style={styles.modalTitle}>Create Post</Text>
-            <TouchableOpacity onPress={() => setCreatePostVisible(false)}>
-              <Ionicons name="close" size={24} color="#333" />
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={() => setCreatePostVisible(false)}
+            >
+              <Ionicons name="close" size={24} color="white" />
             </TouchableOpacity>
-          </View>
+          </LinearGradient>
           
-          <View style={styles.formContainer}>
+          <ScrollView style={styles.formContainer}>
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Title *</Text>
-              <TextInput
-                style={styles.titleInput}
-                placeholder="Enter post title"
-                value={title}
-                onChangeText={setTitle}
-                maxLength={100}
-              />
+              <Text style={styles.inputLabel}>Title <Text style={{color: '#FF5200'}}>*</Text></Text>
+              <View style={styles.titleInputWrapper}>
+                <TextInput
+                  style={styles.titleInput}
+                  placeholder="Enter post title"
+                  value={title}
+                  onChangeText={setTitle}
+                  maxLength={100}
+                  placeholderTextColor="#999"
+                />
+                {title.length > 0 && (
+                  <Text style={styles.charCount}>{title.length}/100</Text>
+                )}
+              </View>
             </View>
             
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Content</Text>
-              <TextInput
-                style={styles.contentInput}
-                placeholder="Enter post content"
-                value={content}
-                onChangeText={setContent}
-                multiline
-                textAlignVertical="top"
-              />
+              <View style={styles.contentInputWrapper}>
+                <TextInput
+                  style={styles.contentInput}
+                  placeholder="Share something with your community..."
+                  value={content}
+                  onChangeText={setContent}
+                  multiline
+                  textAlignVertical="top"
+                  placeholderTextColor="#999"
+                />
+              </View>
             </View>
             
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Tags</Text>
               <View style={styles.tagInputContainer}>
-                <TextInput
-                  style={styles.tagInput}
-                  placeholder="Add tags"
-                  value={tagInput}
-                  onChangeText={setTagInput}
-                  onSubmitEditing={addTag}
-                />
-                <TouchableOpacity style={styles.addTagButton} onPress={addTag}>
+                <View style={styles.tagInputWrapper}>
+                  <Ionicons name="pricetag-outline" size={18} color="#999" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.tagInput}
+                    placeholder="Add tags"
+                    value={tagInput}
+                    onChangeText={setTagInput}
+                    onSubmitEditing={addTag}
+                    placeholderTextColor="#999"
+                  />
+                </View>
+                <TouchableOpacity 
+                  style={styles.addTagButton}
+                  onPress={addTag}
+                >
                   <Text style={styles.addTagButtonText}>Add</Text>
                 </TouchableOpacity>
               </View>
               
               {tags.length > 0 && (
-                <View style={styles.tagsContainer}>
+                <View style={styles.selectedTagsContainer}>
                   {tags.map((tag, index) => (
                     <TouchableOpacity 
                       key={index} 
-                      style={styles.tag}
+                      style={styles.selectedTag}
                       onPress={() => removeTag(index)}
+                      activeOpacity={0.7}
                     >
-                      <Text style={styles.tagText}>{tag}</Text>
-                      <Ionicons name="close-circle" size={16} color="#666" style={styles.tagRemoveIcon} />
+                      <Text style={styles.selectedTagText}>{tag}</Text>
+                      <Ionicons name="close-circle" size={16} color="white" style={styles.tagRemoveIcon} />
                     </TouchableOpacity>
                   ))}
                 </View>
               )}
             </View>
             
-            <TouchableOpacity style={styles.createButton} onPress={createPost}>
+            <View style={styles.locationInfoContainer}>
+              <View style={styles.locationIconContainer}>
+                <Feather name="map-pin" size={20} color="#FF5200" />
+              </View>
+              <View style={styles.locationTextContainer}>
+                <Text style={styles.locationInfoTitle}>Location</Text>
+                <Text style={styles.locationInfoText}>
+                  Your post will be visible to users within {radius} km of your current location
+                </Text>
+              </View>
+            </View>
+            
+            <TouchableOpacity 
+              style={[
+                styles.createButton,
+                (!title.trim()) && styles.createButtonDisabled
+              ]} 
+              onPress={createPost}
+              disabled={!title.trim()}
+            >
               <Text style={styles.createButtonText}>Create Post</Text>
             </TouchableOpacity>
-          </View>
+            
+            <View style={styles.formFooter}></View>
+          </ScrollView>
         </SafeAreaView>
       </Modal>
       
-      {/* Floating Create Post Button */}
-      <TouchableOpacity 
-        style={styles.floatingButton}
-        onPress={() => setCreatePostVisible(true)}
+      {/* Floating Create Post Button with Pulse Animation */}
+      <Animated.View 
+        style={[
+          styles.floatingButton,
+          {
+            transform: [{ scale: pulseAnim }]
+          }
+        ]}
       >
-        <MaterialIcons name="add" size={28} color="#fff" />
-      </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.floatingButtonTouchable}
+          onPress={() => setCreatePostVisible(true)}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={['#FF8A5B', '#FF5200']}
+            style={styles.floatingButtonGradient}
+          >
+            <MaterialIcons name="add" size={28} color="#fff" />
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -668,53 +950,81 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f8f8',
   },
   header: {
+    marginBottom: 16,
+  },
+  headerGradient: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eeeeee',
-    backgroundColor: 'white',
+    paddingVertical: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    shadowColor: '#FF5200',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    color: '#333',
+    color: 'white',
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   radiusContainer: {
     paddingHorizontal: 20,
     paddingVertical: 15,
     backgroundColor: 'white',
     marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 12,
+    marginBottom: 16,
+    borderRadius: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  radiusLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   radiusLabel: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 8,
+    marginLeft: 8,
   },
   slider: {
     width: '100%',
     height: 40,
   },
+  radiusMinMaxContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: -8,
+  },
+  radiusMinText: {
+    fontSize: 12,
+    color: '#999',
+  },
+  radiusMaxText: {
+    fontSize: 12,
+    color: '#999',
+  },
   categoryTabsContainer: {
     backgroundColor: 'white',
     marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 12,
+    marginBottom: 16,
+    borderRadius: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   categoryTabs: {
     paddingHorizontal: 10,
@@ -724,10 +1034,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginHorizontal: 4,
-    borderRadius: 20,
+    borderRadius: 8,
+    position: 'relative',
   },
   activeTab: {
     backgroundColor: '#FFF0EB',
+  },
+  activeTabIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    left: '25%',
+    right: '25%',
+    height: 3,
+    backgroundColor: '#FF5200',
+    borderRadius: 3,
   },
   categoryTabText: {
     fontSize: 14,
@@ -762,19 +1082,31 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     backgroundColor: '#FF5200',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    shadowColor: '#FF5200',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
   retryButtonText: {
     color: 'white',
     fontWeight: 'bold',
+    fontSize: 16,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
+  },
+  emptyImage: {
+    width: 100,
+    height: 100,
+    marginBottom: 20,
+    opacity: 0.6,
   },
   emptyText: {
     fontSize: 18,
@@ -794,14 +1126,14 @@ const styles = StyleSheet.create({
   },
   postCard: {
     backgroundColor: 'white',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 5,
     borderWidth: 1,
     borderColor: '#f0f0f0',
   },
@@ -811,13 +1143,17 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   userAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FF5200',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
+    shadowColor: '#FF5200',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
   },
   userInitial: {
     color: 'white',
@@ -828,7 +1164,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#333',
   },
@@ -854,29 +1190,36 @@ const styles = StyleSheet.create({
     color: '#666',
     marginLeft: 3,
   },
+  moreOptionsButton: {
+    padding: 5,
+  },
   postContentContainer: {
-    marginBottom: 12,
+    marginBottom: 14,
   },
   postTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 8,
+    letterSpacing: 0.2,
   },
   postContent: {
     fontSize: 15,
     lineHeight: 22,
     color: '#333',
+    letterSpacing: 0.1,
   },
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   tag: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#f0f0f0',
     borderRadius: 16,
-    paddingVertical: 4,
+    paddingVertical: 6,
     paddingHorizontal: 12,
     marginRight: 8,
     marginBottom: 8,
@@ -893,9 +1236,6 @@ const styles = StyleSheet.create({
   importantTagText: {
     color: '#FF5200',
     fontWeight: 'bold',
-  },
-  tagRemoveIcon: {
-    marginLeft: 4,
   },
   postActions: {
     flexDirection: 'row',
@@ -916,8 +1256,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginRight: 16,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 8,
     backgroundColor: '#f9f9f9',
   },
@@ -937,8 +1277,8 @@ const styles = StyleSheet.create({
   commentButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 8,
     backgroundColor: '#f9f9f9',
   },
@@ -982,7 +1322,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#DDD',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
@@ -1017,6 +1356,27 @@ const styles = StyleSheet.create({
     color: '#333',
     lineHeight: 20,
   },
+  commentActions: {
+    flexDirection: 'row',
+    marginLeft: 42,
+    marginTop: 4,
+  },
+  commentLikeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+    paddingVertical: 4,
+  },
+  commentReplyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  commentActionText: {
+    fontSize: 12,
+    color: '#777',
+    marginLeft: 4,
+  },
   addCommentContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1045,17 +1405,26 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 20,
     bottom: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#FF5200',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    shadowColor: '#FF5200',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  floatingButtonTouchable: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  floatingButtonGradient: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#FF5200',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
   },
   modalContainer: {
     flex: 1,
@@ -1066,20 +1435,32 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eeeeee',
-    backgroundColor: 'white',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    shadowColor: '#FF5200',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: 'white',
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   formContainer: {
-    padding: 16,
+    padding: 20,
   },
   inputContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   inputLabel: {
     fontSize: 16,
@@ -1087,62 +1468,196 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 8,
   },
-  titleInput: {
+  titleInputWrapper: {
+    position: 'relative',
     backgroundColor: 'white',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#ddd',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  titleInput: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: '#333',
+    paddingRight: 50, // Space for character count
+  },
+  charCount: {
+    position: 'absolute',
+    right: 12,
+    top: 14,
+    fontSize: 12,
+    color: '#999',
+  },
+  contentInputWrapper: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   contentInput: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     fontSize: 16,
-    minHeight: 120,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    color: '#333',
+    minHeight: 140,
   },
   tagInputContainer: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: 12,
+  },
+  tagInputWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    paddingHorizontal: 12,
+    marginRight: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  inputIcon: {
+    marginRight: 8,
   },
   tagInput: {
     flex: 1,
-    backgroundColor: 'white',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 14,
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    marginRight: 8,
+    color: '#333',
   },
   addTagButton: {
     backgroundColor: '#FF5200',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 16,
+    shadowColor: '#FF5200',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
   },
   addTagButtonText: {
     color: 'white',
     fontWeight: 'bold',
+    fontSize: 15,
+  },
+  selectedTagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  selectedTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF5200',
+    borderRadius: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  selectedTagText: {
+    color: 'white',
+    fontSize: 14,
+    marginRight: 4,
+  },
+  tagRemoveIcon: {
+    marginLeft: 4,
+  },
+  locationInfoContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  locationIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFF0EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  locationTextContainer: {
+    flex: 1,
+  },
+  locationInfoTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  locationInfoText: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
   },
   createButton: {
     backgroundColor: '#FF5200',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 14,
-    borderRadius: 8,
-    marginTop: 16,
+    paddingVertical: 16,
+    borderRadius: 16,
+    marginBottom: 20,
+    shadowColor: '#FF5200',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  createButtonDisabled: {
+    backgroundColor: '#ffad8a',
+    shadowOpacity: 0.1,
   },
   createButtonText: {
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  formFooter: {
+    height: 40,
+  },
+  likeIndicator: {
+    position: 'absolute',
+    top: '40%',
+    right: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 30,
+    padding: 8,
+    zIndex: 10,
+  },
+  dislikeIndicator: {
+    position: 'absolute',
+    top: '40%',
+    left: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 30,
+    padding: 8,
+    zIndex: 10,
   },
 });

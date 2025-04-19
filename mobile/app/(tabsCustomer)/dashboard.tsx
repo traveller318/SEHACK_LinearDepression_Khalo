@@ -31,6 +31,21 @@ import CustomerPreferencesForm from '../components/CustomerPreferencesForm'
 import { checkIfProfileExists } from '../../lib/customerProfileHelpers'
 import { supabase } from '../../lib/supabase'
 
+interface NearbyStall {
+  name: string;
+  image: string;
+  image_url: string;
+  rating: number;
+  hygiene: number;
+  hygiene_score: number;
+  distance: string;
+  id?: string;
+  lat: number;
+  lng: number;
+  cuisine: string;
+  deliveryTime: string;
+}
+
 export default function DashboardScreen() {
   const { user } = useAuth()
   const router = useRouter()
@@ -43,42 +58,72 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true)
   const [filterModalVisible, setFilterModalVisible] = useState(false)
   const [selectedTags, setSelectedTags] = useState<string[]>(['Bestseller'])
-  const [allStalls, setAllStalls] = useState([])
-  const [nearbyStalls, setNearbyStalls] = useState([
+  const [allStalls, setAllStalls] = useState<VerticalStallCardProps[]>([])
+  const [nearbyStalls, setNearbyStalls] = useState<NearbyStall[]>([
     {
       name: 'Street Corner',
       image: 'https://via.placeholder.com/150/ffffff/000000?text=SC',
+      image_url: 'https://via.placeholder.com/150/ffffff/000000?text=SC',
       rating: 4.2,
       hygiene: 4,
+      hygiene_score: 4,
       distance: '0.3 km',
+      lat: 19.124,
+      lng: 72.835,
+      cuisine: 'Chinese',
+      deliveryTime: '15-20 min',
     },
     {
       name: 'Local Delights',
       image: 'https://via.placeholder.com/150/ffffff/000000?text=LD',
+      image_url: 'https://via.placeholder.com/150/ffffff/000000?text=LD',
       rating: 4.4,
       hygiene: 4,
+      hygiene_score: 4,
       distance: '0.5 km',
+      lat: 19.125,
+      lng: 72.836,
+      cuisine: 'North Indian',
+      deliveryTime: '20-25 min',
     },
     {
       name: 'Metro Eats',
       image: 'https://via.placeholder.com/150/ffffff/000000?text=ME',
+      image_url: 'https://via.placeholder.com/150/ffffff/000000?text=ME',
       rating: 4.1,
       hygiene: 3,
+      hygiene_score: 3,
       distance: '0.8 km',
+      lat: 19.126,
+      lng: 72.837,
+      cuisine: 'Italian',
+      deliveryTime: '15-20 min',
     },
     {
       name: 'Urban Bites',
       image: 'https://via.placeholder.com/150/ffffff/000000?text=UB',
+      image_url: 'https://via.placeholder.com/150/ffffff/000000?text=UB',
       rating: 4.6,
       hygiene: 5,
+      hygiene_score: 5,
       distance: '1.2 km',
+      lat: 19.127,
+      lng: 72.838,
+      cuisine: 'Chinese',
+      deliveryTime: '25-30 min',
     },
     {
       name: 'City Flavors',
       image: 'https://via.placeholder.com/150/ffffff/000000?text=CF',
+      image_url: 'https://via.placeholder.com/150/ffffff/000000?text=CF',
       rating: 4.3,
       hygiene: 4,
+      hygiene_score: 4,
       distance: '1.5 km',
+      lat: 19.128,
+      lng: 72.839,
+      cuisine: 'North Indian',
+      deliveryTime: '20-25 min',
     },
   ])
   useEffect(() => {
@@ -90,7 +135,20 @@ export default function DashboardScreen() {
         const data = await response.json()
         console.log(data)
 
-        setAllStalls(data)
+        // Transform the data to match VerticalStallCardProps
+        const transformedData = data.map((stall: any) => ({
+          name: stall.name || '',
+          image_url: stall.image_url || `https://via.placeholder.com/150/ffffff/000000?text=${stall.name?.split(' ').map((s: string) => s[0]).join('') || 'S'}`,
+          cuisine: stall.cuisine || 'Various',
+          distance: stall.distance || '0 km',
+          deliveryTime: stall.deliveryTime || '15-30 min',
+          rating: stall.rating || 0,
+          hygiene_score: stall.hygiene_score || 0,
+          verified: stall.verified || false,
+          _id: stall._id || stall.id || '1'
+        }));
+
+        setAllStalls(transformedData)
       } catch (error) {
         console.error('Error fetching all stalls:', error)
       }
@@ -422,7 +480,7 @@ export default function DashboardScreen() {
                 name={stall.name}
                 image={stall.image_url}
                 rating={stall.rating}
-                hygiene={stall.hygiene_score}
+                hygiene={stall.hygiene}
                 distance={stall.distance}
                 id={stall.id}
               />
@@ -812,9 +870,9 @@ interface VerticalStallCardProps {
   distance: string;
   deliveryTime: string;
   rating: number;
-  hygieneScore: number;
+  hygiene_score: number;
   verified?: boolean;
-  _id?: string; // Added id prop
+  _id?: string;
 }
 
 const VerticalStallCard = ({
@@ -826,7 +884,7 @@ const VerticalStallCard = ({
   rating,
   hygiene_score,
   verified = false,
-  _id = '1', // Default id if none provided
+  _id = '1',
 }: VerticalStallCardProps) => {
   const router = useRouter()
   
@@ -889,7 +947,7 @@ const VerticalStallCard = ({
                     key={i}
                     name="star"
                     size={12}
-                    color={i < hygiene_score ? '#4CAF50' : '#e0e0e0'}
+                    color={i < (hygiene_score || 0) ? '#4CAF50' : '#e0e0e0'}
                     style={{ marginRight: 2 }}
                   />
                 ))}
