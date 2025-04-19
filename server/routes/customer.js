@@ -156,5 +156,18 @@ router.get('/getAllStalls', async (req, res) => {
     res.status(400).json({ error: error.message })
   }
 })
+router.get('/getSingleStall', async (req, res) => {
+  try {
+    const { stall_id } = req.body
+    const { data, error } = await supabase
+      .from('stalls')
+      .select()
+      .eq('id', stall_id)
+    if (error) throw error
+    res.status(200).json(data)
+  } catch (error) {
+    res.status(400).json({ error: error.message })
+  }
+})
 //based on preference get the stalls
 export default router
