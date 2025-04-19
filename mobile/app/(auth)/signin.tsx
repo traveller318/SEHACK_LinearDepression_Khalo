@@ -111,7 +111,7 @@ const SignInScreen = () => {
                 marginRight: 8,
                 borderWidth: 1,
                 borderColor: userType === 'vendor' ? '#ff8c00' : '#ccc',
-                backgroundColor: userType === 'vendor' ? 'rgba(255, 140, 0, 0.1)' : '#fff',
+                backgroundColor: userType === 'vendor' ? '#e6f2ff' : '#fff',
                 paddingVertical: 12,
                 borderRadius: 8,
                 alignItems: 'center',
@@ -133,7 +133,7 @@ const SignInScreen = () => {
                 marginLeft: 8,
                 borderWidth: 1,
                 borderColor: userType === 'customer' ? '#ff8c00' : '#ccc',
-                backgroundColor: userType === 'customer' ? 'rgba(255, 140, 0, 0.1)' : '#fff',
+                backgroundColor: userType === 'customer' ? '#e6f2ff' : '#fff',
                 paddingVertical: 12,
                 borderRadius: 8,
                 alignItems: 'center',
@@ -228,8 +228,8 @@ const SignInScreen = () => {
               <Image 
                 source={require('../../assets/images/google.png')} 
                 style={styles.socialIcon}
+                resizeMode="contain"
               />
-              <Text style={styles.socialText}>Google</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -243,10 +243,11 @@ export default SignInScreen
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f5f5f5',
   },
   container: {
     flex: 1,
+    backgroundColor: '#f5f5f5',
   },
   errorBanner: {
     position: 'absolute',
@@ -266,26 +267,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    height: 220,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    height: 380,
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingBottom: 15,
     justifyContent: 'center',
     alignItems: 'center',
   },
   imageContainer: {
-    width: '100%',
+    width: '50%',
+    height: 200,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
   },
   headerImage: {
-    width: 200,
-    height: 150,
+    width: '100%',
+    height: '100%',
   },
   formContainer: {
     flex: 1,
     backgroundColor: '#ffffff',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    marginTop: -30,
     paddingHorizontal: 24,
     paddingTop: 20,
   },
@@ -323,7 +326,7 @@ const styles = StyleSheet.create({
   input: {
     height: 50,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 12,
     borderColor: '#ddd',
     paddingHorizontal: 15,
     fontSize: 16,
@@ -334,7 +337,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 50,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 12,
     borderColor: '#ddd',
     backgroundColor: '#f9f9f9',
   },
@@ -378,18 +381,18 @@ const styles = StyleSheet.create({
   signInButton: {
     backgroundColor: '#ff8c00',
     height: 50,
-    borderRadius: 8,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
-    shadowColor: '#000',
+    shadowColor: '#0066ff',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
   signInButtonText: {
     color: '#000000',
@@ -413,22 +416,30 @@ const styles = StyleSheet.create({
   },
   socialContainer: {
     marginBottom: 30,
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 8,
-    paddingVertical: 12,
-    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   socialIcon: {
     width: 24,
     height: 24,
-    marginRight: 10,
   },
   socialText: {
     fontSize: 16,

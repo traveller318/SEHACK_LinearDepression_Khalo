@@ -62,30 +62,33 @@ export default function HomeScreen() {
   if (showPreferences) {
     return <CustomerPreferencesForm />
   }
+  else{
+    router.replace('/(tabsCustomer)/dashboard')
+  }
 
   // Otherwise show the main home screen
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Welcome</Text>
-        <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
-      </View>
+  // return (
+  //   <View style={styles.container}>
+  //     <View style={styles.header}>
+  //       <Text style={styles.title}>Welcome</Text>
+  //       <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
+  //         <Text style={styles.signOutText}>Sign Out</Text>
+  //       </TouchableOpacity>
+  //     </View>
 
-      <View style={styles.userInfo}>
-        <Text style={styles.label}>Email:</Text>
-        <Text style={styles.value}>{user?.email}</Text>
+  //     <View style={styles.userInfo}>
+  //       <Text style={styles.label}>Email:</Text>
+  //       <Text style={styles.value}>{user?.email}</Text>
 
-        <Text style={styles.label}>Name:</Text>
-        <Text style={styles.value}>{user?.user_metadata?.full_name || 'Not set'}</Text>
-        <Text style={styles.label}>User Type:</Text>
-        <Text style={styles.value}>{user?.user_metadata?.user_type || 'Not set'}</Text>
-        <Text style={styles.label}>User ID:</Text>
-        <Text style={styles.value}>{user?.id}</Text>
-      </View>
-    </View>
-  )
+  //       <Text style={styles.label}>Name:</Text>
+  //       <Text style={styles.value}>{user?.user_metadata?.full_name || 'Not set'}</Text>
+  //       <Text style={styles.label}>User Type:</Text>
+  //       <Text style={styles.value}>{user?.user_metadata?.user_type || 'Not set'}</Text>
+  //       <Text style={styles.label}>User ID:</Text>
+  //       <Text style={styles.value}>{user?.id}</Text>
+  //     </View>
+  //   </View>
+  // )
 }
 
 const styles = StyleSheet.create({
