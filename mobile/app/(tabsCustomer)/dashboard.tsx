@@ -116,8 +116,8 @@ export default function DashboardScreen() {
             style={styles.map}
             provider="google" // Force Google Maps on Android
             initialRegion={{
-              latitude: location?.coords.latitude || 37.78825,
-              longitude: location?.coords.longitude || -122.4324,
+              latitude: location?.coords.latitude || 19.123,
+              longitude: location?.coords.longitude || 72.834,
               latitudeDelta: 0,
               longitudeDelta: 0,
             }}
@@ -254,6 +254,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
+    borderEndEndRadius: 16,
+    borderEndStartRadius: 16,
   },
   locationContainer: {
     flexDirection: 'row',
@@ -459,7 +461,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   curvedContainer: {
-    backgroundColor: '#fff8f0',
+    backgroundColor: '#FF5200',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingTop: 30,
