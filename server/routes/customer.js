@@ -158,7 +158,7 @@ router.get('/getAllStalls', async (req, res) => {
 })
 router.post('/getSingleStall', async (req, res) => {
   try {
-    const { stall_id } = req.params
+    const { stall_id } = req.body
     const { data, error } = await supabase
       .from('stalls')
       .select()
