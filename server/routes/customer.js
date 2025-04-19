@@ -116,4 +116,19 @@ router.post('/createMenuItem', async (req, res) => {
   }
 })
 
+//get all reviews for a stall
+router.get('/getReviews/:stall_id', async (req, res) => {
+  try {
+    const { stall_id } = req.params
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('stall_id', stall_id)
+    if (error) throw error
+    res.status(200).json(data)
+  } catch (error) {
+    res.status(400).json({ error: error.message })
+  }
+})
+
 export default router
