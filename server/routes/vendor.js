@@ -37,4 +37,37 @@ router.post('/createVendorProfile', async (req, res) => {
   }
 })
 
+// CREATE TABLE stalls (
+//   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+//   vendor_id UUID REFERENCES users(id),
+//   name TEXT NOT NULL,
+//   location TEXT,
+//   lat DOUBLE PRECISION,
+//   lng DOUBLE PRECISION,
+//   cuisine TEXT,
+//   hygiene_score INTEGER,
+//   is_verified BOOLEAN DEFAULT FALSE,
+//   created_at TIMESTAMP DEFAULT now()
+// );
+
+router.post('/createStall', async (req, res) => {
+  try {
+    const { vendor_id, name, location, lat, lng, cuisine, hygiene_score } =
+      req.body
+    const { data, error } = await supabase.from('stalls').insert({
+      vendor_id,
+      name,
+      location,
+      lat,
+      lng,
+      cuisine,
+      hygiene_score,
+    })
+    if (error) throw error
+    res.status(200).json(data)
+  } catch (error) {
+    res.status(400).json({ error: error.message })
+  }
+})
+
 export default router
