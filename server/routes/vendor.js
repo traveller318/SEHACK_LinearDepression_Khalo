@@ -176,4 +176,32 @@ router.post('/createMenuItem', async (req, res) => {
   }
 })
 
+router.get('/getMenuItems', async (req, res) => {
+  try {
+    const { stall_id } = req.query
+    const { data, error } = await supabase
+      .from('menu_items')
+      .select()
+      .eq('stall_id', stall_id)
+    if (error) throw error
+    res.status(200).json(data)
+  } catch (error) {
+    res.status(400).json({ error: error.message })
+  }
+})
+
+router.get('/getSingleStall', async (req, res) => {
+  try {
+    const { stall_id } = req.query
+    const { data, error } = await supabase
+      .from('stalls')
+      .select()
+      .eq('id', stall_id)
+    if (error) throw error
+    res.status(200).json(data)
+  } catch (error) {
+    res.status(400).json({ error: error.message })
+  }
+})
+
 export default router

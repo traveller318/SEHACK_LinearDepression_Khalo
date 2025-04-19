@@ -1,12 +1,31 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Image, SafeAreaView, Dimensions, Alert, ActivityIndicator, Modal } from 'react-native'
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+  SafeAreaView,
+  Dimensions,
+  Alert,
+  ActivityIndicator,
+  Modal,
+} from 'react-native'
 import React from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useEffect, useState } from 'react'
-import { MaterialIcons, Feather, Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons'
+import {
+  MaterialIcons,
+  Feather,
+  Ionicons,
+  FontAwesome5,
+  MaterialCommunityIcons,
+} from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps'
 import * as Location from 'expo-location'
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
 import CustomerPreferencesForm from '../components/CustomerPreferencesForm'
 import { checkIfProfileExists } from '../../lib/customerProfileHelpers'
@@ -16,7 +35,7 @@ export default function DashboardScreen() {
   const { user } = useAuth()
   const router = useRouter()
   const insets = useSafeAreaInsets()
-  const { height } = Dimensions.get('window');
+  const { height } = Dimensions.get('window')
   const [location, setLocation] = useState<Location.LocationObject | null>(null)
   const [address, setAddress] = useState<string>('')
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -24,6 +43,43 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true)
   const [filterModalVisible, setFilterModalVisible] = useState(false)
   const [selectedTags, setSelectedTags] = useState<string[]>(['Bestseller'])
+  const [nearbyStalls, setNearbyStalls] = useState([
+    {
+      name: 'Street Corner',
+      image: 'https://via.placeholder.com/150/ffffff/000000?text=SC',
+      rating: 4.2,
+      hygiene: 4,
+      distance: '0.3 km',
+    },
+    {
+      name: 'Local Delights',
+      image: 'https://via.placeholder.com/150/ffffff/000000?text=LD',
+      rating: 4.4,
+      hygiene: 4,
+      distance: '0.5 km',
+    },
+    {
+      name: 'Metro Eats',
+      image: 'https://via.placeholder.com/150/ffffff/000000?text=ME',
+      rating: 4.1,
+      hygiene: 3,
+      distance: '0.8 km',
+    },
+    {
+      name: 'Urban Bites',
+      image: 'https://via.placeholder.com/150/ffffff/000000?text=UB',
+      rating: 4.6,
+      hygiene: 5,
+      distance: '1.2 km',
+    },
+    {
+      name: 'City Flavors',
+      image: 'https://via.placeholder.com/150/ffffff/000000?text=CF',
+      rating: 4.3,
+      hygiene: 4,
+      distance: '1.5 km',
+    },
+  ])
 
   useEffect(() => {
     if (user && user.user_metadata?.user_type !== 'customer') {
@@ -36,7 +92,7 @@ export default function DashboardScreen() {
       if (user?.id) {
         try {
           const hasProfile = await checkIfProfileExists(user.id)
-          setShowPreferences(!hasProfile) 
+          setShowPreferences(!hasProfile)
           setLoading(false)
         } catch (error) {
           console.error('Error checking profile:', error)
@@ -51,42 +107,69 @@ export default function DashboardScreen() {
   }, [user])
 
   useEffect(() => {
-    (async () => {
+    ;(async () => {
       try {
         // Request location permissions
-        let { status } = await Location.requestForegroundPermissionsAsync();
+        let { status } = await Location.requestForegroundPermissionsAsync()
         if (status !== 'granted') {
-          setAddress('Permission to access location was denied');
-          return;
+          setAddress('Permission to access location was denied')
+          return
         }
 
         // Get the current position
-        let currentLocation = await Location.getCurrentPositionAsync({});
-        setLocation(currentLocation);
-        console.log('Current Location:', currentLocation);
-        
+        let currentLocation = await Location.getCurrentPositionAsync({})
+        setLocation(currentLocation)
+        console.log('Current Location:', currentLocation)
+
         // Optionally, reverse geocode to get a human-readable address
         let addressResponse = await Location.reverseGeocodeAsync({
           latitude: currentLocation.coords.latitude,
           longitude: currentLocation.coords.longitude,
-        });
-        console.log('Address Response:', addressResponse);
-        const formattedAdress = addressResponse[0].formattedAddress;
-        const truncatedAddress = formattedAdress?.split(' ').slice(0, 3).join(' ') + '....';
-        console.log('Truncated Address:', truncatedAddress);
+        })
+        console.log('Address Response:', addressResponse)
+        const formattedAdress = addressResponse[0].formattedAddress
+        const truncatedAddress =
+          formattedAdress?.split(' ').slice(0, 3).join(' ') + '....'
+        console.log('Truncated Address:', truncatedAddress)
 
         if (addressResponse.length > 0) {
-          const { formattedAddress, city, region } = addressResponse[0];
-          setAddress(truncatedAddress);
+          const { formattedAddress, city, region } = addressResponse[0]
+          setAddress(truncatedAddress)
         } else {
-          setAddress('Unable to determine address');
+          setAddress('Unable to determine address')
         }
       } catch (error) {
-        console.error('Error fetching location:', error);
-        setAddress('Error fetching location');
+        console.error('Error fetching location:', error)
+        setAddress('Error fetching location')
       }
-    })();
-  }, []);
+    })()
+  }, [])
+  useEffect(() => {
+    const fetchStalls = async () => {
+      try {
+        const response = await fetch(
+          'https://khalo-r5v5.onrender.com/customer/getNearbyStalls',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              lat: 19.123537,
+              lng: 72.836067,
+            }),
+          }
+        )
+
+        const data = await response.json()
+        setNearbyStalls(data)
+      } catch (error) {
+        console.error('Error fetching nearby stalls:', error)
+      }
+    }
+
+    fetchStalls()
+  }, [])
 
   const handleSignOut = async () => {
     try {
@@ -105,9 +188,9 @@ export default function DashboardScreen() {
   // Function to toggle tag selection
   const toggleTagSelection = (tagName: string) => {
     if (selectedTags.includes(tagName)) {
-      setSelectedTags(selectedTags.filter(tag => tag !== tagName));
+      setSelectedTags(selectedTags.filter((tag) => tag !== tagName))
     } else {
-      setSelectedTags([...selectedTags, tagName]);
+      setSelectedTags([...selectedTags, tagName])
     }
   }
 
@@ -121,8 +204,8 @@ export default function DashboardScreen() {
   }
 
   // If the user needs to complete preferences, show the form
-  console.log("showPreferences", showPreferences);
-  
+  console.log('showPreferences', showPreferences)
+
   if (showPreferences) {
     return <CustomerPreferencesForm />
   }
@@ -138,7 +221,10 @@ export default function DashboardScreen() {
             <MaterialIcons name="keyboard-arrow-down" size={24} color="#333" />
           </View>
           <View style={styles.headerIcons}>
-            <TouchableOpacity style={styles.filterIcon} onPress={toggleFilterModal}>
+            <TouchableOpacity
+              style={styles.filterIcon}
+              onPress={toggleFilterModal}
+            >
               <MaterialIcons name="filter-list" size={24} color="#333" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.cartIcon}>
@@ -150,9 +236,14 @@ export default function DashboardScreen() {
                 <Text style={styles.badgeText}>2</Text>
               </View>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleSignOut} style={styles.profileIcon}>
+            <TouchableOpacity
+              onPress={handleSignOut}
+              style={styles.profileIcon}
+            >
               <View style={styles.profileCircle}>
-                <Text style={styles.profileInitial}>{user?.email?.charAt(0).toUpperCase() || "U"}</Text>
+                <Text style={styles.profileInitial}>
+                  {user?.email?.charAt(0).toUpperCase() || 'U'}
+                </Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -166,7 +257,12 @@ export default function DashboardScreen() {
             end={{ x: 1, y: 0 }}
             style={styles.searchBar}
           >
-            <Feather name="search" size={22} color="#fff" style={styles.searchIcon} />
+            <Feather
+              name="search"
+              size={22}
+              color="#fff"
+              style={styles.searchIcon}
+            />
             <TextInput
               style={styles.searchInput}
               placeholder="Search for food, groceries, etc."
@@ -179,7 +275,11 @@ export default function DashboardScreen() {
                 <Feather name="x" size={20} color="#fff" />
               </TouchableOpacity>
             ) : (
-              <MaterialCommunityIcons name="microphone-outline" size={22} color="#fff" />
+              <MaterialCommunityIcons
+                name="microphone-outline"
+                size={22}
+                color="#fff"
+              />
             )}
           </LinearGradient>
           <TouchableOpacity style={styles.nowButton}>
@@ -189,7 +289,10 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Map Placeholder - increased by 20% */}
           <View style={[styles.mapPlaceholder, { height: height * 0.8 * 0.6 }]}>
             <MapView
@@ -206,9 +309,12 @@ export default function DashboardScreen() {
               showsCompass
             >
               <Marker
-                coordinate={{ latitude: location?.coords.latitude || 37.78825, longitude: location?.coords.longitude || -122.4324 }}
-                title={"My Location"}
-                description={"You are here"}
+                coordinate={{
+                  latitude: location?.coords.latitude || 37.78825,
+                  longitude: location?.coords.longitude || -122.4324,
+                }}
+                title={'My Location'}
+                description={'You are here'}
                 pinColor="#FF5200"
               />
             </MapView>
@@ -216,83 +322,69 @@ export default function DashboardScreen() {
 
           {/* Nearby Stalls - Below the map */}
           <Text style={styles.categoriesTitle}>Nearby Stalls</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.stallsContainer}>
-            <StallCard 
-              name="Street Corner" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=SC" 
-              rating={4.2} 
-              hygiene={4}
-              distance="0.3 km" 
-            />
-            <StallCard 
-              name="Local Delights" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=LD" 
-              rating={4.4} 
-              hygiene={4}
-              distance="0.5 km" 
-            />
-            <StallCard 
-              name="Metro Eats" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=ME" 
-              rating={4.1} 
-              hygiene={3}
-              distance="0.8 km" 
-            />
-            <StallCard 
-              name="Urban Bites" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=UB" 
-              rating={4.6} 
-              hygiene={5}
-              distance="1.2 km" 
-            />
-            <StallCard 
-              name="City Flavors" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=CF" 
-              rating={4.3} 
-              hygiene={4}
-              distance="1.5 km" 
-            />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.stallsContainer}
+          >
+            {nearbyStalls.map((stall, index) => (
+              <StallCard
+                key={index}
+                name={stall.name}
+                image={stall.image_url}
+                rating={stall.rating}
+                hygiene={stall.hygiene_score}
+                distance={stall.distance}
+              />
+            ))}
           </ScrollView>
 
           {/* Popular Stalls */}
           <Text style={styles.categoriesTitle}>Popular Stalls</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.stallsContainer}>
-            <StallCard 
-              name="Foodie Heaven" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=FH" 
-              rating={4.7} 
-              hygiene={5} 
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.stallsContainer}
+          >
+            <StallCard
+              name="Foodie Heaven"
+              image="https://via.placeholder.com/150/ffffff/000000?text=FH"
+              rating={4.7}
+              hygiene={5}
             />
-            <StallCard 
-              name="Spice Corner" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=SC" 
-              rating={4.5} 
-              hygiene={4} 
+            <StallCard
+              name="Spice Corner"
+              image="https://via.placeholder.com/150/ffffff/000000?text=SC"
+              rating={4.5}
+              hygiene={4}
             />
-            <StallCard 
-              name="Fresh & Tasty" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=FT" 
-              rating={4.8} 
-              hygiene={5} 
+            <StallCard
+              name="Fresh & Tasty"
+              image="https://via.placeholder.com/150/ffffff/000000?text=FT"
+              rating={4.8}
+              hygiene={5}
             />
-            <StallCard 
-              name="Quick Bites" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=QB" 
-              rating={4.3} 
-              hygiene={4} 
+            <StallCard
+              name="Quick Bites"
+              image="https://via.placeholder.com/150/ffffff/000000?text=QB"
+              rating={4.3}
+              hygiene={4}
             />
-            <StallCard 
-              name="Street Delights" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=SD" 
-              rating={4.6} 
-              hygiene={4} 
+            <StallCard
+              name="Street Delights"
+              image="https://via.placeholder.com/150/ffffff/000000?text=SD"
+              rating={4.6}
+              hygiene={4}
             />
           </ScrollView>
 
           {/* Curved Orange Container - ONLY for filters and All Stalls */}
           <View style={styles.curvedContainer}>
             {/* Filter Button */}
-            <TouchableOpacity style={styles.filterButton} onPress={toggleFilterModal}>
+            <TouchableOpacity
+              style={styles.filterButton}
+              onPress={toggleFilterModal}
+            >
               <Text style={styles.filterButtonText}>Filters and Sorting</Text>
               <MaterialIcons name="tune" size={20} color="#fff" />
             </TouchableOpacity>
@@ -300,7 +392,7 @@ export default function DashboardScreen() {
             <Text style={styles.sectionTitle}>All Stalls</Text>
 
             <View style={styles.allStallsContainer}>
-              <VerticalStallCard 
+              <VerticalStallCard
                 name="Suraj Lama Momos"
                 image="https://via.placeholder.com/150/ffffff/000000?text=SL"
                 cuisine="Tibetan, Chinese"
@@ -310,8 +402,8 @@ export default function DashboardScreen() {
                 hygieneScore={4}
                 verified={true}
               />
-              <VerticalStallCard 
-                name="Street Corner" 
+              <VerticalStallCard
+                name="Street Corner"
                 cuisine="Indian"
                 distance="0.3 km"
                 deliveryTime="15-20 mins"
@@ -319,8 +411,8 @@ export default function DashboardScreen() {
                 hygieneScore={4}
                 verified={true}
               />
-              <VerticalStallCard 
-                name="Local Delights" 
+              <VerticalStallCard
+                name="Local Delights"
                 cuisine="Chinese"
                 distance="0.5 km"
                 deliveryTime="20-25 mins"
@@ -328,8 +420,8 @@ export default function DashboardScreen() {
                 hygieneScore={3}
                 verified={false}
               />
-              <VerticalStallCard 
-                name="Metro Eats" 
+              <VerticalStallCard
+                name="Metro Eats"
                 cuisine="Fast Food"
                 distance="0.8 km"
                 deliveryTime="25-30 mins"
@@ -337,8 +429,8 @@ export default function DashboardScreen() {
                 hygieneScore={5}
                 verified={true}
               />
-              <VerticalStallCard 
-                name="Urban Bites" 
+              <VerticalStallCard
+                name="Urban Bites"
                 cuisine="Italian"
                 distance="1.2 km"
                 deliveryTime="30-35 mins"
@@ -346,8 +438,8 @@ export default function DashboardScreen() {
                 hygieneScore={4}
                 verified={true}
               />
-              <VerticalStallCard 
-                name="City Flavors" 
+              <VerticalStallCard
+                name="City Flavors"
                 cuisine="Mexican"
                 distance="1.5 km"
                 deliveryTime="35-40 mins"
@@ -355,8 +447,8 @@ export default function DashboardScreen() {
                 hygieneScore={3}
                 verified={false}
               />
-              <VerticalStallCard 
-                name="Foodie Heaven" 
+              <VerticalStallCard
+                name="Foodie Heaven"
                 cuisine="Thai"
                 distance="1.7 km"
                 deliveryTime="30-35 mins"
@@ -364,8 +456,8 @@ export default function DashboardScreen() {
                 hygieneScore={5}
                 verified={true}
               />
-              <VerticalStallCard 
-                name="Spice Corner" 
+              <VerticalStallCard
+                name="Spice Corner"
                 cuisine="Indian"
                 distance="1.9 km"
                 deliveryTime="25-30 mins"
@@ -388,9 +480,9 @@ export default function DashboardScreen() {
         visible={filterModalVisible}
         onRequestClose={toggleFilterModal}
       >
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1} 
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
           onPress={toggleFilterModal}
         >
           <View style={styles.modalContainer}>
@@ -400,8 +492,8 @@ export default function DashboardScreen() {
                 <MaterialIcons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
-            
-            <ScrollView 
+
+            <ScrollView
               style={styles.modalContent}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.modalContentContainer}
@@ -410,35 +502,67 @@ export default function DashboardScreen() {
               <View style={styles.filterSection}>
                 <Text style={styles.sectionHeader}>Sort by</Text>
                 <View style={styles.sortOptions}>
-                  <TouchableOpacity style={[styles.sortOption, styles.sortOptionWithIcon]}>
+                  <TouchableOpacity
+                    style={[styles.sortOption, styles.sortOptionWithIcon]}
+                  >
                     <MaterialIcons name="arrow-upward" size={18} color="#666" />
-                    <Text style={styles.sortOptionText}>Price - low to high</Text>
+                    <Text style={styles.sortOptionText}>
+                      Price - low to high
+                    </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={[styles.sortOption, styles.sortOptionWithIcon]}>
-                    <MaterialIcons name="arrow-downward" size={18} color="#666" />
-                    <Text style={styles.sortOptionText}>Price - high to low</Text>
+                  <TouchableOpacity
+                    style={[styles.sortOption, styles.sortOptionWithIcon]}
+                  >
+                    <MaterialIcons
+                      name="arrow-downward"
+                      size={18}
+                      color="#666"
+                    />
+                    <Text style={styles.sortOptionText}>
+                      Price - high to low
+                    </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={[styles.sortOption, styles.sortOptionWithIcon, styles.sortOptionActive]}>
+                  <TouchableOpacity
+                    style={[
+                      styles.sortOption,
+                      styles.sortOptionWithIcon,
+                      styles.sortOptionActive,
+                    ]}
+                  >
                     <MaterialIcons name="star" size={18} color="#FF5200" />
-                    <Text style={[styles.sortOptionText, {color: '#FF5200'}]}>Rating - high to low</Text>
+                    <Text style={[styles.sortOptionText, { color: '#FF5200' }]}>
+                      Rating - high to low
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
-              
+
               {/* Pure veg toggle */}
               <View style={styles.filterSection}>
                 <View style={styles.pureVegRow}>
-                  <MaterialIcons name="check-circle" size={24} color="#4CAF50" />
-                  <Text style={styles.sectionHeader}>Pure vegetarian options only</Text>
+                  <MaterialIcons
+                    name="check-circle"
+                    size={24}
+                    color="#4CAF50"
+                  />
+                  <Text style={styles.sectionHeader}>
+                    Pure vegetarian options only
+                  </Text>
                 </View>
               </View>
-              
+
               {/* Top picks */}
               <View style={styles.filterSection}>
                 <Text style={styles.sectionHeader}>Top picks</Text>
                 <View style={styles.filterChips}>
-                  <TouchableOpacity style={[styles.filterChip, styles.filterChipActive]}>
-                    <MaterialIcons name="local-fire-department" size={18} color="#FF5722" />
+                  <TouchableOpacity
+                    style={[styles.filterChip, styles.filterChipActive]}
+                  >
+                    <MaterialIcons
+                      name="local-fire-department"
+                      size={18}
+                      color="#FF5722"
+                    />
                     <Text style={styles.filterChipText}>Bestseller</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.filterChip}>
@@ -446,37 +570,57 @@ export default function DashboardScreen() {
                     <Text style={styles.filterChipText}>Rated 4+</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.filterChip}>
-                    <MaterialCommunityIcons name="crown" size={18} color="#9C27B0" />
+                    <MaterialCommunityIcons
+                      name="crown"
+                      size={18}
+                      color="#9C27B0"
+                    />
                     <Text style={styles.filterChipText}>Premium</Text>
                   </TouchableOpacity>
                 </View>
               </View>
-              
+
               {/* Dietary preference */}
               <View style={styles.filterSection}>
                 <Text style={styles.sectionHeader}>Dietary preference</Text>
                 <View style={styles.filterChips}>
                   <TouchableOpacity style={styles.filterChip}>
-                    <MaterialCommunityIcons name="chili-mild" size={18} color="#FF0000" />
+                    <MaterialCommunityIcons
+                      name="chili-mild"
+                      size={18}
+                      color="#FF0000"
+                    />
                     <Text style={styles.filterChipText}>Spicy</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.filterChip}>
-                    <MaterialCommunityIcons name="leaf" size={18} color="#4CAF50" />
+                    <MaterialCommunityIcons
+                      name="leaf"
+                      size={18}
+                      color="#4CAF50"
+                    />
                     <Text style={styles.filterChipText}>Vegan</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.filterChip}>
-                    <MaterialCommunityIcons name="food-apple" size={18} color="#8BC34A" />
+                    <MaterialCommunityIcons
+                      name="food-apple"
+                      size={18}
+                      color="#8BC34A"
+                    />
                     <Text style={styles.filterChipText}>Healthy</Text>
                   </TouchableOpacity>
                 </View>
               </View>
-              
+
               {/* Offers */}
               <View style={styles.filterSection}>
                 <Text style={styles.sectionHeader}>Offers</Text>
                 <View style={styles.filterChips}>
                   <TouchableOpacity style={styles.filterChip}>
-                    <MaterialIcons name="local-offer" size={18} color="#2196F3" />
+                    <MaterialIcons
+                      name="local-offer"
+                      size={18}
+                      color="#2196F3"
+                    />
                     <Text style={styles.filterChipText}>Items @ 50% OFF</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.filterChip}>
@@ -485,12 +629,14 @@ export default function DashboardScreen() {
                   </TouchableOpacity>
                 </View>
               </View>
-              
+
               {/* Distance */}
               <View style={styles.filterSection}>
                 <Text style={styles.sectionHeader}>Distance</Text>
                 <View style={styles.filterChips}>
-                  <TouchableOpacity style={[styles.filterChip, styles.filterChipActive]}>
+                  <TouchableOpacity
+                    style={[styles.filterChip, styles.filterChipActive]}
+                  >
                     <MaterialIcons name="place" size={18} color="#E91E63" />
                     <Text style={styles.filterChipText}>Less than 1 km</Text>
                   </TouchableOpacity>
@@ -505,12 +651,18 @@ export default function DashboardScreen() {
                 </View>
               </View>
             </ScrollView>
-            
+
             <View style={styles.modalFooter}>
-              <TouchableOpacity style={styles.clearButton} onPress={toggleFilterModal}>
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={toggleFilterModal}
+              >
                 <Text style={styles.clearButtonText}>Clear All</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.applyButton} onPress={toggleFilterModal}>
+              <TouchableOpacity
+                style={styles.applyButton}
+                onPress={toggleFilterModal}
+              >
                 <LinearGradient
                   colors={['#FF9A5A', '#FF5200']}
                   start={{ x: 0, y: 0 }}
@@ -525,19 +677,25 @@ export default function DashboardScreen() {
         </TouchableOpacity>
       </Modal>
     </>
-  );
+  )
 }
 
 // Helper component for Stall Cards
 interface StallCardProps {
-  name: string;
-  image: string;
-  rating: number;
-  hygiene: number;
-  distance?: string;
+  name: string
+  image: string
+  rating: number
+  hygiene: number
+  distance?: string
 }
 
-const StallCard = ({ name, image, rating, hygiene, distance }: StallCardProps) => (
+const StallCard = ({
+  name,
+  image,
+  rating,
+  hygiene,
+  distance,
+}: StallCardProps) => (
   <View style={styles.stallCard}>
     <Image source={{ uri: image }} style={styles.stallImage} />
     <View style={styles.stallOverlay}>
@@ -554,17 +712,23 @@ const StallCard = ({ name, image, rating, hygiene, distance }: StallCardProps) =
           <Text style={styles.ratingLabel}>Popularity</Text>
         </View>
         <View style={styles.ratingItem}>
-          <MaterialCommunityIcons name="silverware-clean" size={16} color="#4CAF50" />
+          <MaterialCommunityIcons
+            name="silverware-clean"
+            size={16}
+            color="#4CAF50"
+          />
           <View style={styles.hygieneStars}>
-            {Array(5).fill(0).map((_, i) => (
-              <MaterialIcons 
-                key={i}
-                name="star" 
-                size={12} 
-                color={i < hygiene ? "#4CAF50" : "#e0e0e0"} 
-                style={{ marginRight: 2 }}
-              />
-            ))}
+            {Array(5)
+              .fill(0)
+              .map((_, i) => (
+                <MaterialIcons
+                  key={i}
+                  name="star"
+                  size={12}
+                  color={i < hygiene ? '#4CAF50' : '#e0e0e0'}
+                  style={{ marginRight: 2 }}
+                />
+              ))}
           </View>
           <Text style={styles.ratingLabel}>Hygiene</Text>
         </View>
@@ -581,8 +745,8 @@ const StallCard = ({ name, image, rating, hygiene, distance }: StallCardProps) =
 
 // Helper component for promo buttons
 interface PromoButtonProps {
-  icon: string;
-  name: string;
+  icon: string
+  name: string
 }
 
 const PromoButton = ({ icon, name }: PromoButtonProps) => (
@@ -594,15 +758,15 @@ const PromoButton = ({ icon, name }: PromoButtonProps) => (
 
 // Helper component for filter tags
 interface FilterTagProps {
-  icon: React.ReactNode;
-  name: string;
-  active?: boolean;
-  onPress?: () => void;
+  icon: React.ReactNode
+  name: string
+  active?: boolean
+  onPress?: () => void
 }
 
 const FilterTag = ({ icon, name, active = false, onPress }: FilterTagProps) => (
-  <TouchableOpacity 
-    style={[styles.filterTag, active && styles.filterTagActive]} 
+  <TouchableOpacity
+    style={[styles.filterTag, active && styles.filterTagActive]}
     onPress={onPress}
   >
     <View style={styles.filterTagIcon}>{icon}</View>
@@ -612,32 +776,39 @@ const FilterTag = ({ icon, name, active = false, onPress }: FilterTagProps) => (
 
 // New Vertical Stall Card Component
 interface VerticalStallCardProps {
-  name: string;
-  image?: string;
-  cuisine: string;
-  distance: string;
-  deliveryTime: string;
-  rating: number;
-  hygieneScore: number;
-  verified?: boolean;
+  name: string
+  image?: string
+  cuisine: string
+  distance: string
+  deliveryTime: string
+  rating: number
+  hygieneScore: number
+  verified?: boolean
 }
 
-const VerticalStallCard = ({ 
-  name, 
-  image, 
-  cuisine, 
-  distance, 
-  deliveryTime, 
-  rating, 
-  hygieneScore, 
-  verified = false 
+const VerticalStallCard = ({
+  name,
+  image,
+  cuisine,
+  distance,
+  deliveryTime,
+  rating,
+  hygieneScore,
+  verified = false,
 }: VerticalStallCardProps) => (
   <View style={styles.verticalStallCard}>
     <View style={styles.verticalStallContent}>
       <View style={styles.verticalStallImageContainer}>
-        <Image 
-          source={{ uri: image || `https://via.placeholder.com/150/ffffff/000000?text=${name.split(' ').map(s => s[0]).join('')}` }} 
-          style={styles.verticalStallImage} 
+        <Image
+          source={{
+            uri:
+              image ||
+              `https://via.placeholder.com/150/ffffff/000000?text=${name
+                .split(' ')
+                .map((s) => s[0])
+                .join('')}`,
+          }}
+          style={styles.verticalStallImage}
         />
       </View>
       <View style={styles.verticalStallInfo}>
@@ -666,23 +837,34 @@ const VerticalStallCard = ({
             <Text style={styles.verticalStallRatingText}>{rating}</Text>
           </View>
           <View style={styles.verticalStallHygiene}>
-            <MaterialCommunityIcons name="silverware-clean" size={16} color="#4CAF50" />
+            <MaterialCommunityIcons
+              name="silverware-clean"
+              size={16}
+              color="#4CAF50"
+            />
             <View style={styles.hygieneStars}>
-              {Array(5).fill(0).map((_, i) => (
-                <MaterialIcons 
-                  key={i}
-                  name="star" 
-                  size={12} 
-                  color={i < hygieneScore ? "#4CAF50" : "#e0e0e0"} 
-                  style={{ marginRight: 2 }}
-                />
-              ))}
+              {Array(5)
+                .fill(0)
+                .map((_, i) => (
+                  <MaterialIcons
+                    key={i}
+                    name="star"
+                    size={12}
+                    color={i < hygieneScore ? '#4CAF50' : '#e0e0e0'}
+                    style={{ marginRight: 2 }}
+                  />
+                ))}
             </View>
           </View>
         </View>
       </View>
     </View>
-    <MaterialIcons name="chevron-right" size={24} color="#999" style={styles.verticalStallArrow} />
+    <MaterialIcons
+      name="chevron-right"
+      size={24}
+      color="#999"
+      style={styles.verticalStallArrow}
+    />
   </View>
 )
 
@@ -1122,7 +1304,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     paddingHorizontal: 16,
-    maxHeight: 500,  // Make the modal more scrollable
+    maxHeight: 500, // Make the modal more scrollable
   },
   modalContentContainer: {
     paddingTop: 16,
