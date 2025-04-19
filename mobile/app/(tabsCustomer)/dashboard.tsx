@@ -812,7 +812,7 @@ const VerticalStallCard = ({
   distance,
   deliveryTime,
   rating,
-  hygieneScore,
+  hygiene_score,
   verified = false,
 }: VerticalStallCardProps) => (
   <View style={styles.verticalStallCard}>
@@ -869,7 +869,7 @@ const VerticalStallCard = ({
                     key={i}
                     name="star"
                     size={12}
-                    color={i < hygieneScore ? '#4CAF50' : '#e0e0e0'}
+                    color={i < hygiene_score ? '#4CAF50' : '#e0e0e0'}
                     style={{ marginRight: 2 }}
                   />
                 ))}
