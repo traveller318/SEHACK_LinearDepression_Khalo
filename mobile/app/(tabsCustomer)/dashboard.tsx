@@ -1,21 +1,70 @@
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Image, SafeAreaView, Dimensions } from 'react-native'
 import React from 'react'
 import { useAuth } from '../../contexts/AuthContext'
+import { useEffect } from 'react'
 import { MaterialIcons, Feather, Ionicons, FontAwesome5 } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import MapView, { Marker } from 'react-native-maps';
+import { PROVIDER_GOOGLE } from 'react-native-maps'
+import * as Location from 'expo-location'
+
+// import { StyleSheet, View } from 'react-native';
 
 export default function DashboardScreen() {
   const { user } = useAuth()
   const insets = useSafeAreaInsets()
   const { height } = Dimensions.get('window');
-  
+  const [location, setLocation] = React.useState<Location.LocationObject | null>(null)
+  const [address, setAddress] = React.useState<string>('')
+
+
+  useEffect(() => {
+    (async () => {
+      try {
+        // Request location permissions
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setAddress('Permission to access location was denied');
+          return;
+        }
+
+        // Get the current position
+        let currentLocation = await Location.getCurrentPositionAsync({});
+        setLocation(currentLocation);
+        console.log('Current Location:', currentLocation);
+        
+        // Optionally, reverse geocode to get a human-readable address
+        let addressResponse = await Location.reverseGeocodeAsync({
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+        });
+        console.log('Address Response:', addressResponse);
+        const formattedAdress = addressResponse[0].formattedAddress;
+        const truncatedAddress = formattedAdress?.split(' ').slice(0, 3).join(' ') + '....';
+        console.log('Truncated Address:', truncatedAddress);
+
+        if (addressResponse.length > 0) {
+          const { formattedAddress, city, region } = addressResponse[0];
+          setAddress(truncatedAddress);
+        } else {
+          setAddress('Unable to determine address');
+        }
+      } catch (error) {
+        console.error('Error fetching location:', error);
+        setAddress('Error fetching location');
+      }
+    })();
+  }, []);
+
+
+
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header Bar */}
       <View style={styles.headerBar}>
         <View style={styles.locationContainer}>
           <MaterialIcons name="location-on" size={24} color="#333" />
-          <Text style={styles.locationText}>283 Hayes St</Text>
+          <Text style={styles.locationText}>{address}</Text>
           <MaterialIcons name="keyboard-arrow-down" size={24} color="#333" />
         </View>
         <View style={styles.headerIcons}>
@@ -35,12 +84,12 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
       </View>
-      
+
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <Feather name="search" size={20} color="#333" style={styles.searchIcon} />
-          <TextInput 
+          <TextInput
             style={styles.searchInput}
             placeholder="Search DoorDash"
             placeholderTextColor="#888"
@@ -52,7 +101,7 @@ export default function DashboardScreen() {
           <MaterialIcons name="keyboard-arrow-down" size={20} color="#333" />
         </TouchableOpacity>
       </View>
-      
+
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {/* Featured Promos - Replacing service buttons */}
         <View style={styles.featuredContainer}>
@@ -60,16 +109,27 @@ export default function DashboardScreen() {
           <PromoButton icon="percent" name="Daily Deals" />
           <PromoButton icon="bolt" name="Express" />
         </View>
-        
+
         {/* Map Placeholder - 70% of screen height */}
-        <View style={[styles.mapPlaceholder, {height: height * 0.7 * 0.7}]}>
-          <MaterialIcons name="map" size={48} color="#666" />
-          <Text style={styles.mapText}>Map Area (70% of screen)</Text>
-          <TouchableOpacity style={styles.mapButton}>
-            <Text style={styles.mapButtonText}>Explore Nearby</Text>
-          </TouchableOpacity>
+        <View style={[styles.mapPlaceholder, { height: height * 0.7 * 0.7 }]}>
+          <MapView
+            style={styles.map}
+            provider="google" // Force Google Maps on Android
+            initialRegion={{
+              latitude: location?.coords.latitude || 37.78825,
+              longitude: location?.coords.longitude || -122.4324,
+              latitudeDelta: 0,
+              longitudeDelta: 0,
+            }}
+          >
+            <Marker
+              coordinate={{ latitude: location?.coords.latitude || 37.78825, longitude: location?.coords.longitude || -122.4324 }}
+              title={"My Marker"}
+              description={"This is a marker example"}
+            />
+          </MapView>
         </View>
-        
+
         {/* Food Categories - Moved below map */}
         <Text style={styles.categoriesTitle}>Popular Categories</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesContainer}>
@@ -81,7 +141,7 @@ export default function DashboardScreen() {
           <FoodCategory icon="🍔" name="Burgers" price="$3.50" />
           <FoodCategory icon="🍦" name="Dessert" price="$4.00" />
         </ScrollView>
-        
+
         {/* Curved Orange Container */}
         <View style={styles.curvedContainer}>
           <View style={styles.groceryBanner}>
@@ -92,14 +152,14 @@ export default function DashboardScreen() {
                 <Text style={styles.shopButtonText}>Shop Groceries</Text>
               </TouchableOpacity>
             </View>
-            <Image 
+            <Image
               source={{ uri: 'https://via.placeholder.com/150/ffffff/000000?text=Groceries' }}
               style={styles.groceryImage}
             />
           </View>
-          
+
           <Text style={styles.sectionTitle}>Groceries, Snacks & Drinks</Text>
-          
+
           <View style={styles.storeListItem}>
             <View style={styles.storeIcon}>
               <Text>🛒</Text>
@@ -107,7 +167,7 @@ export default function DashboardScreen() {
             <Text style={styles.storeName}>ALDI</Text>
             <MaterialIcons name="arrow-forward" size={20} color="#333" />
           </View>
-          
+
           <View style={styles.storeListItem}>
             <View style={styles.storeIcon}>
               <Text>🏪</Text>
@@ -115,7 +175,7 @@ export default function DashboardScreen() {
             <Text style={styles.storeName}>7-Eleven</Text>
             <MaterialIcons name="arrow-forward" size={20} color="#333" />
           </View>
-          
+
           <View style={styles.storeListItem}>
             <View style={styles.storeIcon}>
               <Text>🛍️</Text>
@@ -124,11 +184,11 @@ export default function DashboardScreen() {
             <MaterialIcons name="arrow-forward" size={20} color="#333" />
           </View>
         </View>
-        
+
         {/* Bottom Navigation - Just a placeholder to match the image */}
         <View style={styles.bottomPlaceholder} />
       </ScrollView>
-      
+
       {/* Bottom Navigation Bar */}
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem}>
@@ -338,6 +398,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginVertical: 10,
+  },
+  map: {
+    width: '100%',
+    height: '100%',
   },
   mapButton: {
     backgroundColor: '#ff4500',
