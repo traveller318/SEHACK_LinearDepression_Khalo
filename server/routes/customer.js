@@ -122,7 +122,7 @@ router.get('/getReviews/:stall_id', async (req, res) => {
     const { stall_id } = req.params
     const { data, error } = await supabase
       .from('reviews')
-      .select('*')
+      .select('rating, review_text')
       .eq('stall_id', stall_id)
     if (error) throw error
     res.status(200).json(data)
