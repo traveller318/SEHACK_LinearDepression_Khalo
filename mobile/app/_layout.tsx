@@ -29,11 +29,11 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      {/* <StatusBar style="dark" /> */}
+      <StatusBar style="light" />
       <Stack 
         screenOptions={{ 
           headerShown: false,
-          contentStyle: { backgroundColor: 'white' },
+          contentStyle: { backgroundColor: '#ff8c00' },
           animation: 'fade_from_bottom',
         }} 
       />

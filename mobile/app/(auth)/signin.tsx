@@ -78,7 +78,7 @@ const SignInScreen = () => {
 
         {/* Header */}
         <LinearGradient
-          colors={['#0066ff', '#0052cc']}
+          colors={['#ff8c00', '#ff6600']}
           style={[styles.header, { paddingTop: insets.top }]}
         >
           <View style={styles.imageContainer}>
@@ -110,8 +110,8 @@ const SignInScreen = () => {
                 flex: 1,
                 marginRight: 8,
                 borderWidth: 1,
-                borderColor: userType === 'vendor' ? '#3399ff' : '#ccc',
-                backgroundColor: userType === 'vendor' ? '#e6f2ff' : '#fff',
+                borderColor: userType === 'vendor' ? '#ff8c00' : '#ccc',
+                backgroundColor: userType === 'vendor' ? 'rgba(255, 140, 0, 0.1)' : '#fff',
                 paddingVertical: 12,
                 borderRadius: 8,
                 alignItems: 'center',
@@ -125,15 +125,15 @@ const SignInScreen = () => {
                 style={{ width: 24, height: 24, marginRight: 8 }}
                 resizeMode="contain"
               />
-              <Text style={{ color: userType === 'vendor' ? '#3399ff' : '#333', fontWeight: 'bold' }}>Vendor</Text>
+              <Text style={{ color: userType === 'vendor' ? '#ff8c00' : '#333', fontWeight: 'bold' }}>Vendor</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[{
                 flex: 1,
                 marginLeft: 8,
                 borderWidth: 1,
-                borderColor: userType === 'customer' ? '#3399ff' : '#ccc',
-                backgroundColor: userType === 'customer' ? '#e6f2ff' : '#fff',
+                borderColor: userType === 'customer' ? '#ff8c00' : '#ccc',
+                backgroundColor: userType === 'customer' ? 'rgba(255, 140, 0, 0.1)' : '#fff',
                 paddingVertical: 12,
                 borderRadius: 8,
                 alignItems: 'center',
@@ -147,7 +147,7 @@ const SignInScreen = () => {
                 style={{ width: 24, height: 24, marginRight: 8 }}
                 resizeMode="contain"
               />
-              <Text style={{ color: userType === 'customer' ? '#3399ff' : '#333', fontWeight: 'bold' }}>Customer</Text>
+              <Text style={{ color: userType === 'customer' ? '#ff8c00' : '#333', fontWeight: 'bold' }}>Customer</Text>
             </TouchableOpacity>
           </View>
 
@@ -193,44 +193,43 @@ const SignInScreen = () => {
             >
               <View style={styles.checkbox}>
                 {rememberMe && (
-                  <MaterialIcons name="check" size={14} color="#0066ff" />
+                  <MaterialIcons name="check" size={14} color="#ff8c00" />
                 )}
               </View>
               <Text style={styles.rememberMeText}>Remember me</Text>
             </TouchableOpacity>
-
+          
             <TouchableOpacity>
               <Text style={styles.forgotPassword}>Forgot Password?</Text>
             </TouchableOpacity>
           </View>
 
           <TouchableOpacity 
-            style={styles.signInButton}
+            style={[
+              styles.signInButton,
+              {backgroundColor: loading ? '#ccc' : '#ff8c00'}
+            ]} 
             onPress={handleSignIn}
+            disabled={loading}
           >
-            <Text style={styles.signInButtonText}>Log In</Text>
+            <Text style={styles.signInButtonText}>
+              {loading ? 'Signing in...' : 'Sign In'}
+            </Text>
           </TouchableOpacity>
 
-          <View style={styles.dividerContainer}>
-            <View style={styles.divider} />
-            <Text style={styles.dividerText}>Or</Text>
-            <View style={styles.divider} />
+          <View style={styles.orContainer}>
+            <View style={styles.line} />
+            <Text style={styles.orText}>OR</Text>
+            <View style={styles.line} />
           </View>
 
-          <View style={styles.socialButtonsContainer}>
-            <TouchableOpacity 
-              style={styles.socialButton}
-              onPress={() => {
-                // Handle Google sign in
-                console.log('Google sign in')
-                router.push("/onboarding" as const)
-              }}
-            >
+          <View style={styles.socialContainer}>
+            <TouchableOpacity style={styles.socialButton}>
               <Image 
                 source={require('../../assets/images/google.png')} 
                 style={styles.socialIcon}
-                resizeMode="contain"
               />
+              <Text style={styles.socialText}>Google</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -244,89 +243,105 @@ export default SignInScreen
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
+    backgroundColor: '#ffffff',
   },
-  
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+  },
+  errorBanner: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    backgroundColor: '#ff4444',
+    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorText: {
+    color: '#fff',
+    fontSize: 14,
+    flex: 1,
   },
   header: {
-    height: 340,
-    paddingBottom: 15,
+    height: 220,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
     paddingHorizontal: 20,
+    paddingVertical: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
   imageContainer: {
-    width: '50%',
-    height: 220,
-    justifyContent: 'center',
+    width: '100%',
     alignItems: 'center',
+    marginTop: 20,
   },
   headerImage: {
-    width: '100%',
-    height: '100%',
+    width: 200,
+    height: 150,
   },
   formContainer: {
     flex: 1,
-    backgroundColor: 'white',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    marginTop: -30,
-    padding: 24,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 24,
+    paddingTop: 20,
   },
   title: {
-    fontFamily: 'Poppins-Bold',
     fontSize: 28,
-    color: '#333',
-    marginBottom: 6,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#000000',
+    textAlign: 'center',
   },
   signupPrompt: {
     flexDirection: 'row',
+    justifyContent: 'center',
     marginBottom: 24,
   },
   signupText: {
-    fontFamily: 'Poppins',
     fontSize: 14,
     color: '#666',
+    marginRight: 4,
   },
   signupLink: {
-    fontFamily: 'Poppins-SemiBold',
     fontSize: 14,
-    color: '#0066ff',
-    marginLeft: 5,
+    color: '#ff8c00',
+    fontWeight: 'bold',
   },
   inputGroup: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   label: {
-    fontFamily: 'Poppins',
     fontSize: 14,
-    color: '#666',
-    marginBottom: 6,
+    color: '#333',
+    marginBottom: 8,
+    fontWeight: '500',
   },
   input: {
     height: 50,
-    borderColor: '#ddd',
     borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    fontFamily: 'Poppins',
-    fontSize: 14,
+    borderRadius: 8,
+    borderColor: '#ddd',
+    paddingHorizontal: 15,
+    fontSize: 16,
+    backgroundColor: '#f9f9f9',
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     height: 50,
-    borderColor: '#ddd',
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 8,
+    borderColor: '#ddd',
+    backgroundColor: '#f9f9f9',
   },
   passwordInput: {
     flex: 1,
-    paddingHorizontal: 12,
-    fontFamily: 'Poppins',
-    fontSize: 14,
+    paddingHorizontal: 15,
+    fontSize: 16,
   },
   eyeIcon: {
     padding: 10,
@@ -344,106 +359,80 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 18,
     height: 18,
-    borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#aaa',
+    borderColor: '#ccc',
+    borderRadius: 3,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
   },
   rememberMeText: {
-    fontFamily: 'Poppins',
     fontSize: 14,
     color: '#666',
   },
   forgotPassword: {
-    fontFamily: 'Poppins-Medium',
     fontSize: 14,
-    color: '#0066ff',
+    color: '#ff8c00',
+    fontWeight: '500',
   },
   signInButton: {
-    backgroundColor: '#0066ff',
+    backgroundColor: '#ff8c00',
     height: 50,
-    borderRadius: 12,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
-    shadowColor: '#0066ff',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
-  },
-  signInButtonText: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 16,
-    color: 'white',
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#ddd',
-  },
-  dividerText: {
-    fontFamily: 'Poppins',
-    fontSize: 14,
-    color: '#999',
-    paddingHorizontal: 10,
-  },
-  socialButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  socialButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 4,
     elevation: 3,
+  },
+  signInButtonText: {
+    color: '#000000',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  orContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ddd',
+  },
+  orText: {
+    paddingHorizontal: 10,
+    color: '#666',
+    fontSize: 14,
+  },
+  socialContainer: {
+    marginBottom: 30,
+  },
+  socialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingVertical: 12,
+    marginBottom: 12,
   },
   socialIcon: {
     width: 24,
     height: 24,
+    marginRight: 10,
   },
-  errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ff4d4d',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-    marginHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  errorText: {
-    color: '#fff',
-    fontSize: 15,
+  socialText: {
+    fontSize: 16,
+    color: '#333',
     fontWeight: '500',
-    flex: 1,
-    flexWrap: 'wrap',
   },
-});
+})

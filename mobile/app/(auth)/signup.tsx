@@ -53,7 +53,7 @@ const SignUpScreen = () => {
 
         {/* Header */}
         <LinearGradient
-          colors={['#0066ff', '#0052cc']}
+          colors={['#ff8c00', '#ff6600']}
           style={[styles.header, { paddingTop: insets.top }]}
         >
           <View style={styles.imageContainer}>
@@ -85,7 +85,7 @@ const SignUpScreen = () => {
                 flex: 1,
                 marginRight: 8,
                 borderWidth: 1,
-                borderColor: userType === 'vendor' ? '#3399ff' : '#ccc',
+                borderColor: userType === 'vendor' ? '#ff8c00' : '#ccc',
                 backgroundColor: userType === 'vendor' ? '#e6f2ff' : '#fff',
                 paddingVertical: 12,
                 borderRadius: 8,
@@ -100,14 +100,14 @@ const SignUpScreen = () => {
                 style={{ width: 24, height: 24, marginRight: 8 }}
                 resizeMode="contain"
               />
-              <Text style={{ color: userType === 'vendor' ? '#3399ff' : '#333', fontWeight: 'bold' }}>Vendor</Text>
+              <Text style={{ color: userType === 'vendor' ? '#ff8c00' : '#333', fontWeight: 'bold' }}>Vendor</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[{
                 flex: 1,
                 marginLeft: 8,
                 borderWidth: 1,
-                borderColor: userType === 'customer' ? '#3399ff' : '#ccc',
+                borderColor: userType === 'customer' ? '#ff8c00' : '#ccc',
                 backgroundColor: userType === 'customer' ? '#e6f2ff' : '#fff',
                 paddingVertical: 12,
                 borderRadius: 8,
@@ -122,7 +122,7 @@ const SignUpScreen = () => {
                 style={{ width: 24, height: 24, marginRight: 8 }}
                 resizeMode="contain"
               />
-              <Text style={{ color: userType === 'customer' ? '#3399ff' : '#333', fontWeight: 'bold' }}>Customer</Text>
+              <Text style={{ color: userType === 'customer' ? '#ff8c00' : '#333', fontWeight: 'bold' }}>Customer</Text>
             </TouchableOpacity>
           </View>
 
@@ -173,7 +173,10 @@ const SignUpScreen = () => {
           </View>
 
           <TouchableOpacity
-            style={styles.signUpButton}
+            style={[
+              styles.signUpButton,
+              { backgroundColor: loading ? '#ccc' : '#ff8c00' }
+            ]}
             onPress={handleSignUp}
           >
             <Text style={styles.signUpButtonText}>Create Account</Text>
@@ -263,7 +266,7 @@ const styles = StyleSheet.create({
   loginLink: {
     fontFamily: 'Poppins-SemiBold',
     fontSize: 14,
-    color: '#0066ff',
+    color: '#ff8c00',
     marginLeft: 5,
   },
   inputGroup: {
@@ -302,7 +305,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   signUpButton: {
-    backgroundColor: '#0066ff',
+    backgroundColor: '#ff8c00',
     height: 50,
     borderRadius: 12,
     justifyContent: 'center',
@@ -320,7 +323,7 @@ const styles = StyleSheet.create({
   signUpButtonText: {
     fontFamily: 'Poppins-SemiBold',
     fontSize: 16,
-    color: 'white',
+    color: '#000000',
   },
   dividerContainer: {
     flexDirection: 'row',
@@ -364,5 +367,10 @@ const styles = StyleSheet.create({
   socialIcon: {
     width: 24,
     height: 24,
+  },
+  signInLink: {
+    fontSize: 14,
+    color: '#ff8c00',
+    fontWeight: 'bold',
   },
 });

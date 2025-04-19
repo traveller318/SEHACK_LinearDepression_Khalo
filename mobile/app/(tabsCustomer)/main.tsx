@@ -1,12 +1,16 @@
-import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native'
-import React, { useEffect } from 'react'
+import { StyleSheet, Text, View, TouchableOpacity, Alert, ActivityIndicator } from 'react-native'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'expo-router'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
+import CustomerPreferencesForm from '../components/CustomerPreferencesForm'
+import { checkIfProfileExists } from '../../lib/customerProfileHelpers'
 
 export default function HomeScreen() {
   const { user } = useAuth()
   const router = useRouter()
+  const [showPreferences, setShowPreferences] = useState<boolean | null>(null)
+  const [loading, setLoading] = useState(true)
 
   const handleSignOut = async () => {
     try {
@@ -24,6 +28,42 @@ export default function HomeScreen() {
     }
   }, [user])
 
+  useEffect(() => {
+    const checkUserProfile = async () => {
+      if (user?.id) {
+        try {
+          const hasProfile = await checkIfProfileExists(user.id)
+          setShowPreferences(!hasProfile) 
+          setLoading(false)
+        } catch (error) {
+          console.error('Error checking profile:', error)
+          setLoading(false)
+        }
+      }
+    }
+
+    if (user) {
+      checkUserProfile()
+    }
+  }, [user])
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#ff8c00" />
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    )
+  }
+
+  // If the user needs to complete preferences, show the form
+  console.log("showPreferences", showPreferences);
+  
+  if (showPreferences) {
+    return <CustomerPreferencesForm />
+  }
+
+  // Otherwise show the main home screen
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -52,18 +92,32 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#ff8c00',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000000',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#ff8c00',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
+    backgroundColor: '#000000',
+    padding: 15,
+    borderRadius: 12,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#ff8c00',
   },
   signOutButton: {
     backgroundColor: '#ff4444',
@@ -72,30 +126,31 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   signOutText: {
-    color: 'white',
+    color: '#ffffff',
     fontWeight: 'bold',
   },
   userInfo: {
-    backgroundColor: 'white',
+    backgroundColor: '#000000',
     padding: 20,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 3,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
   },
   label: {
     fontSize: 16,
-    color: '#666',
+    color: '#ff8c00',
     marginBottom: 4,
+    fontWeight: '500',
   },
   value: {
     fontSize: 18,
-    color: '#333',
+    color: '#ffffff',
     marginBottom: 16,
     fontWeight: '500',
   },
