@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Image, SafeAreaView, Dimensions, Alert, ActivityIndicator } from 'react-native'
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Image, SafeAreaView, Dimensions, Alert, ActivityIndicator, Modal } from 'react-native'
 import React from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useEffect, useState } from 'react'
@@ -22,6 +22,8 @@ export default function DashboardScreen() {
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [showPreferences, setShowPreferences] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(true)
+  const [filterModalVisible, setFilterModalVisible] = useState(false)
+  const [selectedTags, setSelectedTags] = useState<string[]>(['Bestseller'])
 
   useEffect(() => {
     if (user && user.user_metadata?.user_type !== 'customer') {
@@ -96,6 +98,19 @@ export default function DashboardScreen() {
     }
   }
 
+  const toggleFilterModal = () => {
+    setFilterModalVisible(!filterModalVisible)
+  }
+
+  // Function to toggle tag selection
+  const toggleTagSelection = (tagName: string) => {
+    if (selectedTags.includes(tagName)) {
+      setSelectedTags(selectedTags.filter(tag => tag !== tagName));
+    } else {
+      setSelectedTags([...selectedTags, tagName]);
+    }
+  }
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -113,174 +128,404 @@ export default function DashboardScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header Bar */}
-      <View style={styles.headerBar}>
-        <View style={styles.locationContainer}>
-          <MaterialIcons name="location-on" size={24} color="#333" />
-          <Text style={styles.locationText}>{address}</Text>
-          <MaterialIcons name="keyboard-arrow-down" size={24} color="#333" />
-        </View>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.cartIcon}>
-            <MaterialIcons name="shopping-cart" size={24} color="#333" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.notificationIcon}>
-            <MaterialIcons name="notifications" size={24} color="#333" />
-            <View style={styles.notificationBadge}>
-              <Text style={styles.badgeText}>2</Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleSignOut} style={styles.profileIcon}>
-            <View style={styles.profileCircle}>
-              <Text style={styles.profileInitial}>{user?.email?.charAt(0).toUpperCase() || "U"}</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Enhanced Search Bar */}
-      <View style={styles.searchContainer}>
-        <LinearGradient
-          colors={['#FF9A5A', '#FF5200']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.searchBar}
-        >
-          <Feather name="search" size={22} color="#fff" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search for food, groceries, etc."
-            placeholderTextColor="rgba(255,255,255,0.8)"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery ? (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Feather name="x" size={20} color="#fff" />
+    <>
+      <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
+        {/* Header Bar */}
+        <View style={styles.headerBar}>
+          <View style={styles.locationContainer}>
+            <MaterialIcons name="location-on" size={24} color="#333" />
+            <Text style={styles.locationText}>{address}</Text>
+            <MaterialIcons name="keyboard-arrow-down" size={24} color="#333" />
+          </View>
+          <View style={styles.headerIcons}>
+            <TouchableOpacity style={styles.filterIcon} onPress={toggleFilterModal}>
+              <MaterialIcons name="filter-list" size={24} color="#333" />
             </TouchableOpacity>
-          ) : (
-            <MaterialCommunityIcons name="microphone-outline" size={22} color="#fff" />
-          )}
-        </LinearGradient>
-        <TouchableOpacity style={styles.nowButton}>
-          <MaterialIcons name="schedule" size={20} color="#333" />
-          <Text style={styles.nowText}>Now</Text>
-          <MaterialIcons name="keyboard-arrow-down" size={20} color="#333" />
-        </TouchableOpacity>
-      </View>
+            <TouchableOpacity style={styles.cartIcon}>
+              <MaterialIcons name="shopping-cart" size={24} color="#333" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.notificationIcon}>
+              <MaterialIcons name="notifications" size={24} color="#333" />
+              <View style={styles.notificationBadge}>
+                <Text style={styles.badgeText}>2</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleSignOut} style={styles.profileIcon}>
+              <View style={styles.profileCircle}>
+                <Text style={styles.profileInitial}>{user?.email?.charAt(0).toUpperCase() || "U"}</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
 
-      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {/* Map Placeholder - 70% of screen height */}
-        <View style={[styles.mapPlaceholder, { height: height * 0.7 * 0.5 }]}>
-          <MapView
-            style={styles.map}
-            provider="google" // Force Google Maps on Android
-            initialRegion={{
-              latitude: location?.coords.latitude || 19.123,
-              longitude: location?.coords.longitude || 72.834,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }}
+        {/* Enhanced Search Bar */}
+        <View style={styles.searchContainer}>
+          <LinearGradient
+            colors={['#FF9A5A', '#FF5200']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.searchBar}
           >
-            <Marker
-              coordinate={{ latitude: location?.coords.latitude || 37.78825, longitude: location?.coords.longitude || -122.4324 }}
-              title={"My Location"}
-              description={"You are here"}
+            <Feather name="search" size={22} color="#fff" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search for food, groceries, etc."
+              placeholderTextColor="rgba(255,255,255,0.8)"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
             />
-          </MapView>
+            {searchQuery ? (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Feather name="x" size={20} color="#fff" />
+              </TouchableOpacity>
+            ) : (
+              <MaterialCommunityIcons name="microphone-outline" size={22} color="#fff" />
+            )}
+          </LinearGradient>
+          <TouchableOpacity style={styles.nowButton}>
+            <MaterialIcons name="schedule" size={20} color="#333" />
+            <Text style={styles.nowText}>Now</Text>
+            <MaterialIcons name="keyboard-arrow-down" size={20} color="#333" />
+          </TouchableOpacity>
         </View>
 
-        {/* Featured Promos - Below the map */}
-        <View style={styles.featuredContainer}>
-          <PromoButton icon="utensils" name="$0 Delivery Fee" />
-          <PromoButton icon="percent" name="Daily Deals" />
-          <PromoButton icon="bolt" name="Express" />
-        </View>
+        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          {/* Map Placeholder - increased by 20% */}
+          <View style={[styles.mapPlaceholder, { height: height * 0.8 * 0.6 }]}>
+            <MapView
+              style={styles.map}
+              provider="google" // Force Google Maps on Android
+              initialRegion={{
+                latitude: location?.coords.latitude || 19.123,
+                longitude: location?.coords.longitude || 72.834,
+                latitudeDelta: 0.0075, // Zoomed in a bit more
+                longitudeDelta: 0.0075,
+              }}
+              showsUserLocation
+              showsMyLocationButton
+              showsCompass
+            >
+              <Marker
+                coordinate={{ latitude: location?.coords.latitude || 37.78825, longitude: location?.coords.longitude || -122.4324 }}
+                title={"My Location"}
+                description={"You are here"}
+                pinColor="#FF5200"
+              />
+            </MapView>
+          </View>
 
-        {/* Popular Stalls */}
-        <Text style={styles.categoriesTitle}>Popular Stalls</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.stallsContainer}>
-          <StallCard 
-            name="Foodie Heaven" 
-            image="https://via.placeholder.com/150/ffffff/000000?text=FH" 
-            rating={4.7} 
-            hygiene={5} 
-          />
-          <StallCard 
-            name="Spice Corner" 
-            image="https://via.placeholder.com/150/ffffff/000000?text=SC" 
-            rating={4.5} 
-            hygiene={4} 
-          />
-          <StallCard 
-            name="Fresh & Tasty" 
-            image="https://via.placeholder.com/150/ffffff/000000?text=FT" 
-            rating={4.8} 
-            hygiene={5} 
-          />
-          <StallCard 
-            name="Quick Bites" 
-            image="https://via.placeholder.com/150/ffffff/000000?text=QB" 
-            rating={4.3} 
-            hygiene={4} 
-          />
-          <StallCard 
-            name="Street Delights" 
-            image="https://via.placeholder.com/150/ffffff/000000?text=SD" 
-            rating={4.6} 
-            hygiene={4} 
-          />
+          {/* Nearby Stalls - Below the map */}
+          <Text style={styles.categoriesTitle}>Nearby Stalls</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.stallsContainer}>
+            <StallCard 
+              name="Street Corner" 
+              image="https://via.placeholder.com/150/ffffff/000000?text=SC" 
+              rating={4.2} 
+              hygiene={4}
+              distance="0.3 km" 
+            />
+            <StallCard 
+              name="Local Delights" 
+              image="https://via.placeholder.com/150/ffffff/000000?text=LD" 
+              rating={4.4} 
+              hygiene={4}
+              distance="0.5 km" 
+            />
+            <StallCard 
+              name="Metro Eats" 
+              image="https://via.placeholder.com/150/ffffff/000000?text=ME" 
+              rating={4.1} 
+              hygiene={3}
+              distance="0.8 km" 
+            />
+            <StallCard 
+              name="Urban Bites" 
+              image="https://via.placeholder.com/150/ffffff/000000?text=UB" 
+              rating={4.6} 
+              hygiene={5}
+              distance="1.2 km" 
+            />
+            <StallCard 
+              name="City Flavors" 
+              image="https://via.placeholder.com/150/ffffff/000000?text=CF" 
+              rating={4.3} 
+              hygiene={4}
+              distance="1.5 km" 
+            />
+          </ScrollView>
+
+          {/* Popular Stalls */}
+          <Text style={styles.categoriesTitle}>Popular Stalls</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.stallsContainer}>
+            <StallCard 
+              name="Foodie Heaven" 
+              image="https://via.placeholder.com/150/ffffff/000000?text=FH" 
+              rating={4.7} 
+              hygiene={5} 
+            />
+            <StallCard 
+              name="Spice Corner" 
+              image="https://via.placeholder.com/150/ffffff/000000?text=SC" 
+              rating={4.5} 
+              hygiene={4} 
+            />
+            <StallCard 
+              name="Fresh & Tasty" 
+              image="https://via.placeholder.com/150/ffffff/000000?text=FT" 
+              rating={4.8} 
+              hygiene={5} 
+            />
+            <StallCard 
+              name="Quick Bites" 
+              image="https://via.placeholder.com/150/ffffff/000000?text=QB" 
+              rating={4.3} 
+              hygiene={4} 
+            />
+            <StallCard 
+              name="Street Delights" 
+              image="https://via.placeholder.com/150/ffffff/000000?text=SD" 
+              rating={4.6} 
+              hygiene={4} 
+            />
+          </ScrollView>
+
+          {/* Curved Orange Container - ONLY for filters and All Stalls */}
+          <View style={styles.curvedContainer}>
+            {/* Filter Button */}
+            <TouchableOpacity style={styles.filterButton} onPress={toggleFilterModal}>
+              <Text style={styles.filterButtonText}>Filters and Sorting</Text>
+              <MaterialIcons name="tune" size={20} color="#fff" />
+            </TouchableOpacity>
+
+            <Text style={styles.sectionTitle}>All Stalls</Text>
+
+            <View style={styles.allStallsContainer}>
+              <VerticalStallCard 
+                name="Suraj Lama Momos"
+                image="https://via.placeholder.com/150/ffffff/000000?text=SL"
+                cuisine="Tibetan, Chinese"
+                distance="3 km"
+                deliveryTime="30-40 mins"
+                rating={4.2}
+                hygieneScore={4}
+                verified={true}
+              />
+              <VerticalStallCard 
+                name="Street Corner" 
+                cuisine="Indian"
+                distance="0.3 km"
+                deliveryTime="15-20 mins"
+                rating={4.2}
+                hygieneScore={4}
+                verified={true}
+              />
+              <VerticalStallCard 
+                name="Local Delights" 
+                cuisine="Chinese"
+                distance="0.5 km"
+                deliveryTime="20-25 mins"
+                rating={4.4}
+                hygieneScore={3}
+                verified={false}
+              />
+              <VerticalStallCard 
+                name="Metro Eats" 
+                cuisine="Fast Food"
+                distance="0.8 km"
+                deliveryTime="25-30 mins"
+                rating={4.1}
+                hygieneScore={5}
+                verified={true}
+              />
+              <VerticalStallCard 
+                name="Urban Bites" 
+                cuisine="Italian"
+                distance="1.2 km"
+                deliveryTime="30-35 mins"
+                rating={4.6}
+                hygieneScore={4}
+                verified={true}
+              />
+              <VerticalStallCard 
+                name="City Flavors" 
+                cuisine="Mexican"
+                distance="1.5 km"
+                deliveryTime="35-40 mins"
+                rating={4.3}
+                hygieneScore={3}
+                verified={false}
+              />
+              <VerticalStallCard 
+                name="Foodie Heaven" 
+                cuisine="Thai"
+                distance="1.7 km"
+                deliveryTime="30-35 mins"
+                rating={4.7}
+                hygieneScore={5}
+                verified={true}
+              />
+              <VerticalStallCard 
+                name="Spice Corner" 
+                cuisine="Indian"
+                distance="1.9 km"
+                deliveryTime="25-30 mins"
+                rating={4.5}
+                hygieneScore={4}
+                verified={true}
+              />
+            </View>
+          </View>
+
+          {/* Bottom placeholder for spacing */}
+          <View style={styles.bottomPlaceholder} />
         </ScrollView>
+      </SafeAreaView>
 
-        {/* Curved Orange Container */}
-        <View style={styles.curvedContainer}>
-          <View style={styles.groceryBanner}>
-            <View style={styles.groceryTextContainer}>
-              <Text style={styles.groceryTitle}>Groceries, your way.</Text>
-              <Text style={styles.grocerySubtitle}>Your perfect grocery order, delivered straight to you.</Text>
-              <TouchableOpacity style={styles.shopButton}>
-                <Text style={styles.shopButtonText}>Shop Groceries</Text>
+      {/* Filter Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={filterModalVisible}
+        onRequestClose={toggleFilterModal}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={toggleFilterModal}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Filters and Sorting</Text>
+              <TouchableOpacity onPress={toggleFilterModal}>
+                <MaterialIcons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
-            <Image
-              source={{ uri: 'https://via.placeholder.com/150/ffffff/000000?text=Groceries' }}
-              style={styles.groceryImage}
-            />
-          </View>
-
-          <Text style={styles.sectionTitle}>Groceries, Snacks & Drinks</Text>
-
-          <View style={styles.storeListItem}>
-            <View style={styles.storeIcon}>
-              <Text>🛒</Text>
+            
+            <ScrollView 
+              style={styles.modalContent}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.modalContentContainer}
+            >
+              {/* Sort by section */}
+              <View style={styles.filterSection}>
+                <Text style={styles.sectionHeader}>Sort by</Text>
+                <View style={styles.sortOptions}>
+                  <TouchableOpacity style={[styles.sortOption, styles.sortOptionWithIcon]}>
+                    <MaterialIcons name="arrow-upward" size={18} color="#666" />
+                    <Text style={styles.sortOptionText}>Price - low to high</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.sortOption, styles.sortOptionWithIcon]}>
+                    <MaterialIcons name="arrow-downward" size={18} color="#666" />
+                    <Text style={styles.sortOptionText}>Price - high to low</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.sortOption, styles.sortOptionWithIcon, styles.sortOptionActive]}>
+                    <MaterialIcons name="star" size={18} color="#FF5200" />
+                    <Text style={[styles.sortOptionText, {color: '#FF5200'}]}>Rating - high to low</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              
+              {/* Pure veg toggle */}
+              <View style={styles.filterSection}>
+                <View style={styles.pureVegRow}>
+                  <MaterialIcons name="check-circle" size={24} color="#4CAF50" />
+                  <Text style={styles.sectionHeader}>Pure vegetarian options only</Text>
+                </View>
+              </View>
+              
+              {/* Top picks */}
+              <View style={styles.filterSection}>
+                <Text style={styles.sectionHeader}>Top picks</Text>
+                <View style={styles.filterChips}>
+                  <TouchableOpacity style={[styles.filterChip, styles.filterChipActive]}>
+                    <MaterialIcons name="local-fire-department" size={18} color="#FF5722" />
+                    <Text style={styles.filterChipText}>Bestseller</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.filterChip}>
+                    <MaterialIcons name="star" size={18} color="#FFD700" />
+                    <Text style={styles.filterChipText}>Rated 4+</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.filterChip}>
+                    <MaterialCommunityIcons name="crown" size={18} color="#9C27B0" />
+                    <Text style={styles.filterChipText}>Premium</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              
+              {/* Dietary preference */}
+              <View style={styles.filterSection}>
+                <Text style={styles.sectionHeader}>Dietary preference</Text>
+                <View style={styles.filterChips}>
+                  <TouchableOpacity style={styles.filterChip}>
+                    <MaterialCommunityIcons name="chili-mild" size={18} color="#FF0000" />
+                    <Text style={styles.filterChipText}>Spicy</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.filterChip}>
+                    <MaterialCommunityIcons name="leaf" size={18} color="#4CAF50" />
+                    <Text style={styles.filterChipText}>Vegan</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.filterChip}>
+                    <MaterialCommunityIcons name="food-apple" size={18} color="#8BC34A" />
+                    <Text style={styles.filterChipText}>Healthy</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              
+              {/* Offers */}
+              <View style={styles.filterSection}>
+                <Text style={styles.sectionHeader}>Offers</Text>
+                <View style={styles.filterChips}>
+                  <TouchableOpacity style={styles.filterChip}>
+                    <MaterialIcons name="local-offer" size={18} color="#2196F3" />
+                    <Text style={styles.filterChipText}>Items @ 50% OFF</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.filterChip}>
+                    <MaterialIcons name="loyalty" size={18} color="#FF9800" />
+                    <Text style={styles.filterChipText}>Buy 1 Get 1</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              
+              {/* Distance */}
+              <View style={styles.filterSection}>
+                <Text style={styles.sectionHeader}>Distance</Text>
+                <View style={styles.filterChips}>
+                  <TouchableOpacity style={[styles.filterChip, styles.filterChipActive]}>
+                    <MaterialIcons name="place" size={18} color="#E91E63" />
+                    <Text style={styles.filterChipText}>Less than 1 km</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.filterChip}>
+                    <MaterialIcons name="place" size={18} color="#9C27B0" />
+                    <Text style={styles.filterChipText}>1-3 km</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.filterChip}>
+                    <MaterialIcons name="place" size={18} color="#3F51B5" />
+                    <Text style={styles.filterChipText}>3-5 km</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+            
+            <View style={styles.modalFooter}>
+              <TouchableOpacity style={styles.clearButton} onPress={toggleFilterModal}>
+                <Text style={styles.clearButtonText}>Clear All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.applyButton} onPress={toggleFilterModal}>
+                <LinearGradient
+                  colors={['#FF9A5A', '#FF5200']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.applyButtonGradient}
+                >
+                  <Text style={styles.applyButtonText}>Apply (120)</Text>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.storeName}>ALDI</Text>
-            <MaterialIcons name="arrow-forward" size={20} color="#333" />
           </View>
-
-          <View style={styles.storeListItem}>
-            <View style={styles.storeIcon}>
-              <Text>🏪</Text>
-            </View>
-            <Text style={styles.storeName}>7-Eleven</Text>
-            <MaterialIcons name="arrow-forward" size={20} color="#333" />
-          </View>
-
-          <View style={styles.storeListItem}>
-            <View style={styles.storeIcon}>
-              <Text>🛍️</Text>
-            </View>
-            <Text style={styles.storeName}>Target</Text>
-            <MaterialIcons name="arrow-forward" size={20} color="#333" />
-          </View>
-        </View>
-
-        {/* Bottom placeholder for spacing */}
-        <View style={styles.bottomPlaceholder} />
-      </ScrollView>
-    </SafeAreaView>
-  )
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
 }
 
 // Helper component for Stall Cards
@@ -289,11 +534,17 @@ interface StallCardProps {
   image: string;
   rating: number;
   hygiene: number;
+  distance?: string;
 }
 
-const StallCard = ({ name, image, rating, hygiene }: StallCardProps) => (
+const StallCard = ({ name, image, rating, hygiene, distance }: StallCardProps) => (
   <View style={styles.stallCard}>
     <Image source={{ uri: image }} style={styles.stallImage} />
+    <View style={styles.stallOverlay}>
+      <View style={styles.stallBadge}>
+        <Text style={styles.stallBadgeText}>Popular</Text>
+      </View>
+    </View>
     <View style={styles.stallInfo}>
       <Text style={styles.stallName}>{name}</Text>
       <View style={styles.ratingContainer}>
@@ -318,6 +569,12 @@ const StallCard = ({ name, image, rating, hygiene }: StallCardProps) => (
           <Text style={styles.ratingLabel}>Hygiene</Text>
         </View>
       </View>
+      {distance && (
+        <View style={styles.distanceContainer}>
+          <MaterialIcons name="place" size={14} color="#666" />
+          <Text style={styles.distanceText}>{distance}</Text>
+        </View>
+      )}
     </View>
   </View>
 )
@@ -333,6 +590,100 @@ const PromoButton = ({ icon, name }: PromoButtonProps) => (
     <FontAwesome5 name={icon as any} size={20} color="#ff4500" />
     <Text style={styles.promoName}>{name}</Text>
   </TouchableOpacity>
+)
+
+// Helper component for filter tags
+interface FilterTagProps {
+  icon: React.ReactNode;
+  name: string;
+  active?: boolean;
+  onPress?: () => void;
+}
+
+const FilterTag = ({ icon, name, active = false, onPress }: FilterTagProps) => (
+  <TouchableOpacity 
+    style={[styles.filterTag, active && styles.filterTagActive]} 
+    onPress={onPress}
+  >
+    <View style={styles.filterTagIcon}>{icon}</View>
+    <Text style={styles.filterTagText}>{name}</Text>
+  </TouchableOpacity>
+)
+
+// New Vertical Stall Card Component
+interface VerticalStallCardProps {
+  name: string;
+  image?: string;
+  cuisine: string;
+  distance: string;
+  deliveryTime: string;
+  rating: number;
+  hygieneScore: number;
+  verified?: boolean;
+}
+
+const VerticalStallCard = ({ 
+  name, 
+  image, 
+  cuisine, 
+  distance, 
+  deliveryTime, 
+  rating, 
+  hygieneScore, 
+  verified = false 
+}: VerticalStallCardProps) => (
+  <View style={styles.verticalStallCard}>
+    <View style={styles.verticalStallContent}>
+      <View style={styles.verticalStallImageContainer}>
+        <Image 
+          source={{ uri: image || `https://via.placeholder.com/150/ffffff/000000?text=${name.split(' ').map(s => s[0]).join('')}` }} 
+          style={styles.verticalStallImage} 
+        />
+      </View>
+      <View style={styles.verticalStallInfo}>
+        <View style={styles.verticalStallHeader}>
+          <Text style={styles.verticalStallName}>{name}</Text>
+          {verified && (
+            <View style={styles.verifiedBadge}>
+              <MaterialIcons name="verified" size={16} color="#4CAF50" />
+            </View>
+          )}
+        </View>
+        <Text style={styles.verticalStallCuisine}>{cuisine}</Text>
+        <View style={styles.verticalStallDetails}>
+          <View style={styles.verticalStallDetail}>
+            <MaterialIcons name="place" size={14} color="#666" />
+            <Text style={styles.verticalStallDetailText}>{distance}</Text>
+          </View>
+          <View style={styles.verticalStallDetail}>
+            <MaterialIcons name="access-time" size={14} color="#666" />
+            <Text style={styles.verticalStallDetailText}>{deliveryTime}</Text>
+          </View>
+        </View>
+        <View style={styles.verticalStallRatings}>
+          <View style={styles.verticalStallRating}>
+            <MaterialIcons name="star" size={16} color="#FFD700" />
+            <Text style={styles.verticalStallRatingText}>{rating}</Text>
+          </View>
+          <View style={styles.verticalStallHygiene}>
+            <MaterialCommunityIcons name="silverware-clean" size={16} color="#4CAF50" />
+            <View style={styles.hygieneStars}>
+              {Array(5).fill(0).map((_, i) => (
+                <MaterialIcons 
+                  key={i}
+                  name="star" 
+                  size={12} 
+                  color={i < hygieneScore ? "#4CAF50" : "#e0e0e0"} 
+                  style={{ marginRight: 2 }}
+                />
+              ))}
+            </View>
+          </View>
+        </View>
+      </View>
+    </View>
+    <MaterialIcons name="chevron-right" size={24} color="#999" style={styles.verticalStallArrow} />
+  </View>
 )
 
 const styles = StyleSheet.create({
@@ -374,6 +725,9 @@ const styles = StyleSheet.create({
   headerIcons: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  filterIcon: {
+    marginRight: 12,
   },
   cartIcon: {
     marginRight: 12,
@@ -465,6 +819,7 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flex: 1,
+    backgroundColor: '#ffffff',
   },
   mapPlaceholder: {
     backgroundColor: '#e0e0e0',
@@ -534,19 +889,39 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
   stallImage: {
     width: '100%',
-    height: 120,
+    height: 140,
     resizeMode: 'cover',
   },
+  stallOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    padding: 8,
+  },
+  stallBadge: {
+    backgroundColor: 'rgba(255, 82, 0, 0.85)',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+  stallBadgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
   stallInfo: {
-    padding: 12,
+    padding: 16,
   },
   stallName: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 12,
+    color: '#333',
   },
   ratingContainer: {
     flexDirection: 'row',
@@ -569,6 +944,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  distanceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    backgroundColor: '#f8f8f8',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  distanceText: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 4,
+    fontWeight: '500',
+  },
   curvedContainer: {
     backgroundColor: '#FF5200',
     borderTopLeftRadius: 30,
@@ -578,48 +969,21 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
     marginTop: 16,
     flex: 1,
-    minHeight: 300,
+    minHeight: 800,
   },
-  groceryBanner: {
-    backgroundColor: '#ffebcd',
-    borderRadius: 16,
-    padding: 16,
+  filterButton: {
     flexDirection: 'row',
-    marginBottom: 24,
-    shadowColor: '#ff8c00',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
   },
-  groceryTextContainer: {
-    flex: 2,
-  },
-  groceryTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#222',
-  },
-  grocerySubtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
-  },
-  shopButton: {
-    backgroundColor: '#ff4500',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
-  },
-  shopButtonText: {
+  filterButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
-  },
-  groceryImage: {
-    flex: 1,
-    borderRadius: 8,
+    fontSize: 16,
+    fontWeight: '600',
   },
   sectionTitle: {
     fontSize: 20,
@@ -627,12 +991,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     color: '#fff',
   },
-  storeListItem: {
+  allStallsContainer: {
+    marginBottom: 24,
+  },
+  verticalStallCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 16,
+    padding: 12,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
@@ -640,21 +1007,253 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
   },
-  storeIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
+  verticalStallContent: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+  },
+  verticalStallImageContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    overflow: 'hidden',
     marginRight: 16,
   },
-  storeName: {
-    fontSize: 16,
-    fontWeight: '600',
+  verticalStallImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  verticalStallInfo: {
     flex: 1,
   },
+  verticalStallHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  verticalStallName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginRight: 8,
+  },
+  verifiedBadge: {
+    padding: 4,
+    backgroundColor: '#E8F5E9',
+    borderRadius: 4,
+  },
+  verticalStallCuisine: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+  },
+  verticalStallDetails: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  verticalStallDetail: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  verticalStallDetailText: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 4,
+  },
+  verticalStallRatings: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  verticalStallRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF8E1',
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    marginRight: 8,
+  },
+  verticalStallRatingText: {
+    marginLeft: 4,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  verticalStallHygiene: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  verticalStallArrow: {
+    marginLeft: 8,
+  },
   bottomPlaceholder: {
-    height: 80,
+    height: 100,
+    backgroundColor: '#FF5200',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 16,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  modalContent: {
+    paddingHorizontal: 16,
+    maxHeight: 500,  // Make the modal more scrollable
+  },
+  modalContentContainer: {
+    paddingTop: 16,
+    paddingBottom: 16,
+  },
+  filterSection: {
+    marginBottom: 24,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  sectionHeader: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+  },
+  pureVegRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  sortOptions: {
+    flexDirection: 'column',
+    gap: 12,
+  },
+  sortOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+  },
+  sortOptionWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  sortOptionActive: {
+    backgroundColor: '#fff4e8',
+    borderLeftWidth: 3,
+    borderLeftColor: '#FF5200',
+  },
+  sortOptionText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+  },
+  filterChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  filterChipActive: {
+    backgroundColor: '#fff4e8',
+    borderColor: '#FF5200',
+    borderWidth: 1,
+  },
+  filterChipText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  clearButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ff4757',
+  },
+  clearButtonText: {
+    color: '#ff4757',
+    fontWeight: '600',
+  },
+  applyButton: {
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  applyButtonGradient: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  applyButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  filterTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  filterTagActive: {
+    backgroundColor: '#FFE0CC',
+    borderColor: '#FF5200',
+    borderWidth: 1,
+  },
+  filterTagIcon: {
+    marginRight: 6,
+  },
+  filterTagText: {
+    fontSize: 14,
+    color: '#333',
   },
 })

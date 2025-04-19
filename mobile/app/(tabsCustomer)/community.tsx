@@ -1,141 +1,196 @@
-import { StyleSheet, Text, View, ScrollView, Image, TouchableOpacity, SafeAreaView, TextInput, FlatList } from 'react-native';
-import React, { useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, FlatList, Modal, TextInput, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons, Ionicons, FontAwesome } from '@expo/vector-icons';
+import Slider from '@react-native-community/slider';
+import * as Location from 'expo-location';
+import { useAuth } from '../../contexts/AuthContext';
 
-type CommunityPost = {
+type Post = {
   id: string;
-  authorName: string;
-  authorAvatar: string;
-  timeAgo: string;
+  title: string;
   content: string;
-  image?: string;
-  likes: number;
-  comments: number;
-  isLiked?: boolean;
-  isSaved?: boolean;
+  user_name?: string;
+  image_url?: string;
+  tags: string[];
+  created_at: string;
+  distance?: number;
 };
-
-const demoPosts: CommunityPost[] = [
-  {
-    id: '1',
-    authorName: 'Sarah Johnson',
-    authorAvatar: 'https://via.placeholder.com/150/ffffff/000000?text=SJ',
-    timeAgo: '2h ago',
-    content: 'Just discovered this amazing street food stall near Central Market! The spicy noodles are to die for. Anyone else tried it? 🍜 #StreetFoodAdventures',
-    image: 'https://via.placeholder.com/600x400/FF9A5A/ffffff?text=Street+Food',
-    likes: 42,
-    comments: 8,
-    isLiked: false,
-    isSaved: false,
-  },
-  {
-    id: '2',
-    authorName: 'Mark Wilson',
-    authorAvatar: 'https://via.placeholder.com/150/ffffff/000000?text=MW',
-    timeAgo: '5h ago',
-    content: 'Looking for recommendations for the best local breakfast places. I\'ve been to Morning Brew and Sunrise Cafe so far, but would love to try more authentic spots!',
-    likes: 17,
-    comments: 25,
-    isLiked: true,
-    isSaved: false,
-  },
-  {
-    id: '3',
-    authorName: 'Emma Chen',
-    authorAvatar: 'https://via.placeholder.com/150/ffffff/000000?text=EC',
-    timeAgo: '1d ago',
-    content: 'My experience with the "Taste of Local" food tour was phenomenal! The guide was knowledgeable and we got to try so many dishes I would have never found on my own. Highly recommend! 👌',
-    image: 'https://via.placeholder.com/600x400/FF5200/ffffff?text=Food+Tour',
-    likes: 89,
-    comments: 12,
-    isLiked: false,
-    isSaved: true,
-  },
-];
 
 export default function CommunityScreen() {
   const insets = useSafeAreaInsets();
-  const [posts, setPosts] = useState<CommunityPost[]>(demoPosts);
-  const [activeTab, setActiveTab] = useState('popular');
+  const { user } = useAuth();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [radius, setRadius] = useState(2); // Default 2km radius
+  const [createPostVisible, setCreatePostVisible] = useState(false);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [tagInput, setTagInput] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [error, setError] = useState('');
 
-  const handleLike = (postId: string) => {
-    setPosts(prevPosts => 
-      prevPosts.map(post => 
-        post.id === postId 
-          ? { 
-              ...post, 
-              likes: post.isLiked ? post.likes - 1 : post.likes + 1,
-              isLiked: !post.isLiked 
-            } 
-          : post
-      )
-    );
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setError('Permission to access location was denied');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const location = await Location.getCurrentPositionAsync({});
+        setLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+        fetchNearbyPosts(location.coords.latitude, location.coords.longitude, radius);
+      } catch (err) {
+        setError('Could not fetch location');
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const fetchNearbyPosts = async (lat: number, lng: number, radius: number) => {
+    setLoading(true);
+    try {
+      const response = await fetch('http://10.10.112.73:3000/community/getNearbyPosts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          lat,
+          lng,
+          radius: radius * 1000, // Convert km to meters
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+      console.log(data);
+      
+      setPosts(data);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      setError('Failed to fetch posts');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSave = (postId: string) => {
-    setPosts(prevPosts => 
-      prevPosts.map(post => 
-        post.id === postId 
-          ? { ...post, isSaved: !post.isSaved } 
-          : post
-      )
-    );
+  const handleRadiusChange = (value: number) => {
+    setRadius(value);
+    if (location) {
+      fetchNearbyPosts(location.latitude, location.longitude, value);
+    }
   };
 
-  const renderPost = ({ item }: { item: CommunityPost }) => (
+  const addTag = () => {
+    if (tagInput.trim() !== '') {
+      if (!tags.includes(tagInput.trim())) {
+        setTags([...tags, tagInput.trim()]);
+      }
+      setTagInput('');
+    }
+  };
+
+  const removeTag = (index: number) => {
+    const newTags = [...tags];
+    newTags.splice(index, 1);
+    setTags(newTags);
+  };
+
+  const createPost = async () => {
+    if (!title.trim()) {
+      Alert.alert('Error', 'Title is required');
+      return;
+    }
+
+    if (!location) {
+      Alert.alert('Error', 'Location is not available');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://192.168.137.1:3000/community/createPost', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: user?.id,
+          title: title.trim(),
+          content: content.trim(),
+          tags,
+          lat: location.latitude,
+          lng: location.longitude,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      // Reset form and close modal
+      setTitle('');
+      setContent('');
+      setTags([]);
+      setCreatePostVisible(false);
+      
+      // Refresh posts
+      fetchNearbyPosts(location.latitude, location.longitude, radius);
+      
+    } catch (error) {
+      console.error('Error creating post:', error);
+      Alert.alert('Error', 'Failed to create post');
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHrs = diffMs / (1000 * 60 * 60);
+    
+    if (diffHrs < 1) {
+      return `${Math.floor(diffHrs * 60)} min ago`;
+    } else if (diffHrs < 24) {
+      return `${Math.floor(diffHrs)}h ago`;
+    } else {
+      return `${Math.floor(diffHrs / 24)}d ago`;
+    }
+  };
+
+  const renderPost = ({ item }: { item: Post }) => (
     <View style={styles.postCard}>
       <View style={styles.postHeader}>
-        <View style={styles.postAuthor}>
-          <Image source={{ uri: item.authorAvatar }} style={styles.authorAvatar} />
-          <View>
-            <Text style={styles.authorName}>{item.authorName}</Text>
-            <Text style={styles.timeAgo}>{item.timeAgo}</Text>
-          </View>
-        </View>
-        <TouchableOpacity>
-          <MaterialIcons name="more-vert" size={24} color="#666" />
-        </TouchableOpacity>
+        <Text style={styles.postTitle}>{item.title}</Text>
+        {item.distance !== undefined && (
+          <Text style={styles.distanceText}>{item.distance.toFixed(1)} km</Text>
+        )}
       </View>
       
       <Text style={styles.postContent}>{item.content}</Text>
       
-      {item.image && (
-        <Image source={{ uri: item.image }} style={styles.postImage} />
+      {item.tags && item.tags.length > 0 && (
+        <View style={styles.tagsContainer}>
+          {item.tags.map((tag, index) => (
+            <View key={index} style={styles.tag}>
+              <Text style={styles.tagText}>{tag}</Text>
+            </View>
+          ))}
+        </View>
       )}
       
-      <View style={styles.postActions}>
-        <TouchableOpacity 
-          style={styles.actionButton} 
-          onPress={() => handleLike(item.id)}
-        >
-          <Ionicons 
-            name={item.isLiked ? "heart" : "heart-outline"} 
-            size={24} 
-            color={item.isLiked ? "#FF5200" : "#666"} 
-          />
-          <Text style={styles.actionText}>{item.likes}</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="chatbubble-outline" size={22} color="#666" />
-          <Text style={styles.actionText}>{item.comments}</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="share-social-outline" size={24} color="#666" />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.saveButton} 
-          onPress={() => handleSave(item.id)}
-        >
-          <Ionicons 
-            name={item.isSaved ? "bookmark" : "bookmark-outline"} 
-            size={24} 
-            color={item.isSaved ? "#FF5200" : "#666"} 
-          />
-        </TouchableOpacity>
+      <View style={styles.postFooter}>
+        <Text style={styles.timeAgo}>{formatDate(item.created_at)}</Text>
       </View>
     </View>
   );
@@ -145,69 +200,137 @@ export default function CommunityScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Community</Text>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="notifications-outline" size={24} color="#333" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="search-outline" size={24} color="#333" />
-          </TouchableOpacity>
-        </View>
       </View>
 
-      {/* New Post Input */}
-      <View style={styles.newPostContainer}>
-        <Image 
-          source={{ uri: 'https://via.placeholder.com/150/ffffff/000000?text=ME' }} 
-          style={styles.userAvatar} 
+      {/* Radius Selector */}
+      <View style={styles.radiusContainer}>
+        <Text style={styles.radiusLabel}>Radius: {radius} km</Text>
+        <Slider
+          style={styles.slider}
+          minimumValue={1}
+          maximumValue={10}
+          step={1}
+          value={radius}
+          onValueChange={handleRadiusChange}
+          minimumTrackTintColor="#FF5200"
+          maximumTrackTintColor="#D3D3D3"
+          thumbTintColor="#FF5200"
         />
-        <TouchableOpacity style={styles.postInput}>
-          <Text style={styles.postInputText}>Share your food experience...</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.cameraButton}>
-          <Ionicons name="camera-outline" size={24} color="#666" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Tabs */}
-      <View style={styles.tabsContainer}>
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'popular' && styles.activeTab]} 
-          onPress={() => setActiveTab('popular')}
-        >
-          <Text style={[styles.tabText, activeTab === 'popular' && styles.activeTabText]}>
-            Popular
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'recent' && styles.activeTab]} 
-          onPress={() => setActiveTab('recent')}
-        >
-          <Text style={[styles.tabText, activeTab === 'recent' && styles.activeTabText]}>
-            Recent
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'following' && styles.activeTab]} 
-          onPress={() => setActiveTab('following')}
-        >
-          <Text style={[styles.tabText, activeTab === 'following' && styles.activeTabText]}>
-            Following
-          </Text>
-        </TouchableOpacity>
       </View>
 
       {/* Posts List */}
-      <FlatList
-        data={posts}
-        renderItem={renderPost}
-        keyExtractor={item => item.id}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.postsList}
-      />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF5200" />
+          <Text style={styles.loadingText}>Loading posts...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={() => location && fetchNearbyPosts(location.latitude, location.longitude, radius)}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : posts.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No posts in your area</Text>
+          <Text style={styles.emptySubText}>Try increasing the radius or be the first to post!</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={posts}
+          renderItem={renderPost}
+          keyExtractor={item => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.postsList}
+        />
+      )}
+      
+      {/* Create Post Modal */}
+      <Modal
+        visible={createPostVisible}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => setCreatePostVisible(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Create Post</Text>
+            <TouchableOpacity onPress={() => setCreatePostVisible(false)}>
+              <Ionicons name="close" size={24} color="#333" />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.formContainer}>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Title *</Text>
+              <TextInput
+                style={styles.titleInput}
+                placeholder="Enter post title"
+                value={title}
+                onChangeText={setTitle}
+                maxLength={100}
+              />
+            </View>
+            
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Content</Text>
+              <TextInput
+                style={styles.contentInput}
+                placeholder="Enter post content"
+                value={content}
+                onChangeText={setContent}
+                multiline
+                textAlignVertical="top"
+              />
+            </View>
+            
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Tags</Text>
+              <View style={styles.tagInputContainer}>
+                <TextInput
+                  style={styles.tagInput}
+                  placeholder="Add tags"
+                  value={tagInput}
+                  onChangeText={setTagInput}
+                  onSubmitEditing={addTag}
+                />
+                <TouchableOpacity style={styles.addTagButton} onPress={addTag}>
+                  <Text style={styles.addTagButtonText}>Add</Text>
+                </TouchableOpacity>
+              </View>
+              
+              {tags.length > 0 && (
+                <View style={styles.tagsContainer}>
+                  {tags.map((tag, index) => (
+                    <TouchableOpacity 
+                      key={index} 
+                      style={styles.tag}
+                      onPress={() => removeTag(index)}
+                    >
+                      <Text style={styles.tagText}>{tag}</Text>
+                      <Ionicons name="close-circle" size={16} color="#666" style={styles.tagRemoveIcon} />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+            
+            <TouchableOpacity style={styles.createButton} onPress={createPost}>
+              <Text style={styles.createButtonText}>Create Post</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
       
       {/* Floating Create Post Button */}
-      <TouchableOpacity style={styles.floatingButton}>
+      <TouchableOpacity 
+        style={styles.floatingButton}
+        onPress={() => setCreatePostVisible(true)}
+      >
         <MaterialIcons name="add" size={28} color="#fff" />
       </TouchableOpacity>
     </SafeAreaView>
@@ -221,79 +344,94 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eeeeee',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
   },
-  headerIcons: {
-    flexDirection: 'row',
-  },
-  iconButton: {
-    marginLeft: 16,
-  },
-  newPostContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  radiusContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     backgroundColor: 'white',
-    borderRadius: 8,
     marginHorizontal: 16,
     marginVertical: 8,
+    borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
-  userAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
+  radiusLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
   },
-  postInput: {
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  loadingContainer: {
     flex: 1,
-    height: 40,
     justifyContent: 'center',
+    alignItems: 'center',
   },
-  postInputText: {
-    color: '#888',
-  },
-  cameraButton: {
-    padding: 8,
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginVertical: 8,
-  },
-  tab: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    marginRight: 8,
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0',
-  },
-  activeTab: {
-    backgroundColor: '#FF5200',
-  },
-  tabText: {
-    fontWeight: '600',
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
     color: '#666',
   },
-  activeTabText: {
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#FF3B30',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#FF5200',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  retryButtonText: {
     color: 'white',
+    fontWeight: 'bold',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  emptySubText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
   },
   postsList: {
     paddingHorizontal: 16,
-    paddingBottom: 60, // Adjusted for the custom tab bar height
+    paddingBottom: 80,
+    paddingTop: 8,
   },
   postCard: {
     backgroundColor: 'white',
@@ -312,24 +450,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  postAuthor: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  authorAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-  },
-  authorName: {
+  postTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
-    fontSize: 16,
     color: '#333',
+    flex: 1,
+    paddingRight: 8,
   },
-  timeAgo: {
+  distanceText: {
     fontSize: 12,
-    color: '#888',
+    color: '#666',
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   postContent: {
     fontSize: 15,
@@ -337,35 +471,43 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 12,
   },
-  postImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  postActions: {
+  tagsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    marginBottom: 8,
+  },
+  tag: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tagText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  tagRemoveIcon: {
+    marginLeft: 4,
+  },
+  postFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
     paddingTop: 12,
   },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  actionText: {
-    marginLeft: 6,
-    color: '#666',
-    fontWeight: '500',
-  },
-  saveButton: {
-    padding: 4,
+  timeAgo: {
+    fontSize: 12,
+    color: '#888',
   },
   floatingButton: {
     position: 'absolute',
     right: 20,
-    bottom: 70, // Adjusted to be above the custom tab bar
+    bottom: 20,
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -377,5 +519,93 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 5,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#f8f8f8',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eeeeee',
+    backgroundColor: 'white',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  formContainer: {
+    padding: 16,
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  titleInput: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  contentInput: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    minHeight: 120,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  tagInputContainer: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  tagInput: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    marginRight: 8,
+  },
+  addTagButton: {
+    backgroundColor: '#FF5200',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  addTagButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  createButton: {
+    backgroundColor: '#FF5200',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  createButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
