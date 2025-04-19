@@ -73,7 +73,7 @@ router.post('/createReview', async (req, res) => {
 router.get('/getReviews/:stall_id', async (req, res) => {
   try {
     const { stall_id } = req.params
-    console.log('testing ')
+    // console.log('testing ')
 
     const { data, error } = await supabase
       .from('reviews')
@@ -156,9 +156,9 @@ router.get('/getAllStalls', async (req, res) => {
     res.status(400).json({ error: error.message })
   }
 })
-router.get('/getSingleStall', async (req, res) => {
+router.post('/getSingleStall', async (req, res) => {
   try {
-    const { stall_id } = req.body
+    const { stall_id } = req.params
     const { data, error } = await supabase
       .from('stalls')
       .select()
