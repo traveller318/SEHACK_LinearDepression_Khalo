@@ -783,7 +783,9 @@ const StallCard = ({
   const router = useRouter()
 
   const handlePress = () => {
-    router.push(`/stalls/${id}`)
+    // Ensure we have an ID to navigate with
+    const stallId = id || '1'
+    router.push(`/stalls/${stallId}`)
   }
 
   return (
@@ -893,7 +895,9 @@ const VerticalStallCard = ({
   const router = useRouter()
 
   const handlePress = () => {
-    router.push(`/stalls/${_id}`)
+    // Ensure we have an ID to navigate with
+    const stallId = _id || '1'
+    router.push(`/stalls/${stallId}`)
   }
 
   return (
