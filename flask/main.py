@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify,send_file
+from flask_cors import CORS
 from cleanliness import generate_cleanliness_report  # Import the generate report function
 from whatsapp_notifier import WhatsAppNotifier  # Import the WhatsApp notifier class
 import os
@@ -6,10 +7,17 @@ import requests
 import json
 import speech_recognition as sr
 import re 
-        # Import the function properly (make sure it's not shadowing this function name)
+import whisper
+import groq
+from supabase import create_client, Client
 from nltk_review import analyze_reviews as analyze_reviews_nltk  # Import the review analysis function
 from groq import Groq
+import io 
+from gtts import gTTS
+import torch 
+import base64
 app = Flask(__name__)
+CORS(app)
 NODE_API_URL = os.getenv("NODE_API_URL")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
@@ -150,6 +158,60 @@ def analyze_speech():
     except requests.exceptions.RequestException as e:
         return jsonify({"error": f"Failed to connect to Node server: {e}"}), 502
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 500  
+  # assuming you're using groq SDK; adjust if different
+
+
+
+# Load Whisper model
+whisper_model = whisper.load_model("base")  # Using base model for faster processing
+@app.route('/foodAssistant', methods=['POST'])
+def food_assistant():
+    try:
+        # Get form data with stall_id and audio file
+        stall_id = request.form.get('stall_id')
+        audio_file = request.files.get('audio')
+        
+        if not stall_id or not audio_file:
+            return jsonify({"error": "Missing stall_id or audio file"}), 400
+
+        # Process audio directly from memory
+        audio_bytes = audio_file.read()
+        audio_buffer = io.BytesIO(audio_bytes)
+        
+        # Transcribe using Whisper (works with file-like objects)
+        result = whisper_model.transcribe(audio_buffer)
+        transcription = result["text"]
+        
+        # Get stall data
+        stall_resp = requests.get("https://khalo-r5v5.onrender.com/customer/getSingleStall", 
+                                json={"stall_id": stall_id})
+        menu_resp = requests.get("https://khalo-r5v5.onrender.com/vendor/getMenuItems",
+                               json={"stall_id": stall_id})
+        
+        if stall_resp.status_code != 200 or menu_resp.status_code != 200:
+            return jsonify({"error": "Failed to fetch stall/menu data"}), 400
+
+        # Generate LLM response
+        prompt = f"""..."""  # Your existing prompt logic
+        response = groq_client.chat.completions.create(...)
+        assistant_response = response.choices[0].message.content
+        
+        # Generate audio response in memory
+        tts = gTTS(text=assistant_response, lang='en')
+        audio_response = io.BytesIO()
+        tts.write_to_fp(audio_response)
+        audio_response.seek(0)
+        
+        return jsonify({
+            "status": "success",
+            "transcribed_text": transcription,
+            "text_response": assistant_response,
+            "audio_response": base64.b64encode(audio_response.getvalue()).decode('utf-8')
+        })
+
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
+    
 if __name__ == "__main__":
     app.run(debug=True)
