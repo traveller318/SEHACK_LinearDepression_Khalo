@@ -145,4 +145,16 @@ router.post('/getKeywordStalls', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' })
   }
 })
+
+//get all stalls
+router.get('/getAllStalls', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('stalls').select()
+    if (error) throw error
+    res.status(200).json(data)
+  } catch (error) {
+    res.status(400).json({ error: error.message })
+  }
+})
+//based on preference get the stalls
 export default router
