@@ -428,14 +428,15 @@ export default function DashboardScreen() {
             >
               <Marker
                 coordinate={{
-                  latitude: location?.coords.latitude || 19.1196,
-                  longitude: location?.coords.longitude || 72.8367,
+                  latitude: location?.coords?.latitude || 19.1196,
+                  longitude: location?.coords?.longitude || 72.8367,
                 }}
                 title={'My Location'}
                 description={'You are here'}
                 pinColor="#FF5200"
-                // image={require('./icons/pizza.png')}
+                //   image={require('./icons/pizza.png')}
               />
+
               {nearbyStalls.map((stall, index) => {
                 let markerImage // Declare markerImage
                 if (stall.cuisine === 'Chinese') {
@@ -451,7 +452,10 @@ export default function DashboardScreen() {
                 return (
                   <Marker
                     key={index}
-                    coordinate={{ latitude: stall.lat, longitude: stall.lng }}
+                    coordinate={{
+                      latitude: stall.lat || 19.1196,
+                      longitude: stall.lng || 72.8367,
+                    }}
                     title={stall.name}
                     description={stall.cuisine}
                   >
@@ -777,11 +781,11 @@ const StallCard = ({
   id = '1',
 }: StallCardProps) => {
   const router = useRouter()
-  
+
   const handlePress = () => {
     router.push(`/stalls/${id}`)
   }
-  
+
   return (
     <TouchableOpacity style={styles.stallCard} onPress={handlePress}>
       <Image source={{ uri: image }} style={styles.stallImage} />
@@ -887,11 +891,11 @@ const VerticalStallCard = ({
   _id = '1',
 }: VerticalStallCardProps) => {
   const router = useRouter()
-  
+
   const handlePress = () => {
     router.push(`/stalls/${_id}`)
   }
-  
+
   return (
   <TouchableOpacity style={styles.verticalStallCard} onPress={handlePress}>
     <View style={styles.verticalStallContent}>
