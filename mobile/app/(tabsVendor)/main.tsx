@@ -1,12 +1,16 @@
-import { StyleSheet, Text, View, TouchableOpacity, Alert, ScrollView } from 'react-native'
-import React, { useEffect } from 'react'
+import { StyleSheet, Text, View, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'expo-router'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
+import VendorInformationForm from '../components/VendorInformationForm'
+import { checkIfVendorProfileExists } from '../../lib/vendorProfileHelpers'
 
 export default function VendorHomeScreen() {
   const { user } = useAuth()
   const router = useRouter()
+  const [showForm, setShowForm] = useState<boolean | null>(null)
+  const [loading, setLoading] = useState(true)
 
   const handleSignOut = async () => {
     try {
@@ -24,32 +28,44 @@ export default function VendorHomeScreen() {
     }
   }, [user])
 
-  return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Welcome Vendor</Text>
-          <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
-            <Text style={styles.signOutText}>Sign Out</Text>
-          </TouchableOpacity>
-        </View>
+  useEffect(() => {
+    const checkVendorProfile = async () => {
+      if (user?.id) {
+        try {
+          const hasProfile = await checkIfVendorProfileExists(user.id)
+          setShowForm(!hasProfile)
+          setLoading(false)
+        } catch (error) {
+          console.error('Error checking vendor profile:', error)
+          setLoading(false)
+        }
+      }
+    }
 
-        <View style={styles.userInfo}>
-          <Text style={styles.label}>Email:</Text>
-          <Text style={styles.value}>{user?.email}</Text>
+    if (user) {
+      checkVendorProfile()
+    }
+  }, [user])
 
-          <Text style={styles.label}>Name:</Text>
-          <Text style={styles.value}>{user?.user_metadata?.full_name || 'Not set'}</Text>
-
-          <Text style={styles.label}>User Type:</Text>
-          <Text style={styles.value}>{user?.user_metadata?.user_type || 'Not set'}</Text>
-
-          <Text style={styles.label}>User ID:</Text>
-          <Text style={styles.value}>{user?.id}</Text>
-        </View>
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#ff8c00" />
+        <Text style={styles.loadingText}>Loading...</Text>
       </View>
-    </ScrollView>
-  )
+    )
+  }
+
+  // If the user needs to complete the form, show it
+  console.log("showForm", showForm);
+  
+  if (showForm) {
+    return <VendorInformationForm />
+  }
+  else {
+    router.replace('/(tabsVendor)/dashboard')
+    return null
+  }
 }
 
 const styles = StyleSheet.create({
@@ -109,5 +125,16 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     marginBottom: 16,
     fontWeight: '500',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#ff8c00',
   },
 })
