@@ -83,4 +83,66 @@ router.post('/createVisit', async (req, res) => {
   }
 })
 
+// CREATE TABLE menu_items (
+//     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+//     stall_id UUID REFERENCES stalls(id) ON DELETE CASCADE,
+//     name TEXT NOT NULL,
+//     description TEXT,
+//     price NUMERIC(10, 2) NOT NULL,
+//     category TEXT,
+//     image_url TEXT,
+//     traits JSONB DEFAULT '[]'::jsonb,  -- Flexible tags like spicy, jain, etc.
+//     created_at TIMESTAMP DEFAULT now(),
+//     updated_at TIMESTAMP DEFAULT now()
+// );
+
+router.post('/createMenuItem', async (req, res) => {
+  try {
+    const { stall_id, name, description, price, category, image_url, traits } =
+      req.body
+    const { data, error } = await supabase.from('menu_items').insert({
+      stall_id,
+      name,
+      description,
+      price,
+      category,
+      image_url,
+      traits,
+    })
+    if (error) throw error
+    res.status(200).json(data)
+  } catch (error) {
+    res.status(400).json({ error: error.message })
+  }
+})
+
+// CREATE TABLE orders (
+//     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+//     stall_id UUID REFERENCES stalls(id) ON DELETE CASCADE,
+//     customer_id UUID REFERENCES users(id) ON DELETE CASCADE,
+//     menu_item_id UUID REFERENCES menu_items(id) ON DELETE SET NULL,  -- Optional
+//     order_value NUMERIC(10, 2) DEFAULT 0.00,
+//     order_expenses NUMERIC(10, 2) DEFAULT 0.00,
+//     date TIMESTAMP DEFAULT now(),
+//     created_at TIMESTAMP DEFAULT now(),
+//     updated_at TIMESTAMP DEFAULT now()
+// );
+
+router.post('/createOrder', async (req, res) => {
+  try {
+    const { stall_id, customer_id, menu_item_id, order_value, order_expenses } =
+      req.body
+    const { data, error } = await supabase.from('orders').insert({
+      stall_id,
+      customer_id,
+      menu_item_id,
+      order_value,
+      order_expenses,
+    })
+    if (error) throw error
+    res.status(200).json(data)
+  } catch (error) {
+    res.status(400).json({ error: error.message })
+  }
+})
 export default router
