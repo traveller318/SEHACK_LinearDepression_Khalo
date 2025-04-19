@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity, Alert, ScrollView } from 'react-native'
 import React, { useEffect } from 'react'
 import { useRouter } from 'expo-router'
 import { useAuth } from '../../contexts/AuthContext'
@@ -25,36 +25,41 @@ export default function VendorHomeScreen() {
   }, [user])
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Welcome Vendor</Text>
-        <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Welcome Vendor</Text>
+          <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
+            <Text style={styles.signOutText}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.userInfo}>
+          <Text style={styles.label}>Email:</Text>
+          <Text style={styles.value}>{user?.email}</Text>
+
+          <Text style={styles.label}>Name:</Text>
+          <Text style={styles.value}>{user?.user_metadata?.full_name || 'Not set'}</Text>
+
+          <Text style={styles.label}>User Type:</Text>
+          <Text style={styles.value}>{user?.user_metadata?.user_type || 'Not set'}</Text>
+
+          <Text style={styles.label}>User ID:</Text>
+          <Text style={styles.value}>{user?.id}</Text>
+        </View>
       </View>
-
-      <View style={styles.userInfo}>
-        <Text style={styles.label}>Email:</Text>
-        <Text style={styles.value}>{user?.email}</Text>
-
-        <Text style={styles.label}>Name:</Text>
-        <Text style={styles.value}>{user?.user_metadata?.full_name || 'Not set'}</Text>
-
-        <Text style={styles.label}>Name:</Text>
-        <Text style={styles.value}>{user?.user_metadata?.user_type || 'Not set'}</Text>
-
-        <Text style={styles.label}>User ID:</Text>
-        <Text style={styles.value}>{user?.id}</Text>
-      </View>
-    </View>
+    </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  scrollContainer: {
     padding: 20,
     backgroundColor: '#f5f5f5',
+    flexGrow: 1,
+  },
+  container: {
+    // Removed flex: 1 to allow ScrollView to control height
   },
   header: {
     flexDirection: 'row',

@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, Alert } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, Alert,ScrollView } from 'react-native'
 import React, { useState } from 'react'
 import { Link, useRouter } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
@@ -64,182 +64,188 @@ const SignInScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.container}>
+        <StatusBar style="light" />
 
-      {/* Error Message Banner */}
-      {errorMsg ? (
-        <View style={styles.errorBanner}>
-          <MaterialIcons name="error-outline" size={22} color="#fff" style={{ marginRight: 8 }} />
-          <Text style={styles.errorText}>{errorMsg}</Text>
-        </View>
-      ) : null}
+        {/* Error Message Banner */}
+        {errorMsg ? (
+          <View style={styles.errorBanner}>
+            <MaterialIcons name="error-outline" size={22} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={styles.errorText}>{errorMsg}</Text>
+          </View>
+        ) : null}
 
-      {/* Header */}
-      <LinearGradient
-        colors={['#0066ff', '#0052cc']}
-        style={[styles.header, { paddingTop: insets.top }]}
-      >
-        <View style={styles.imageContainer}>
-          <Image 
-            source={require('../../assets/images/signin.png')}
-            style={styles.headerImage}
-            resizeMode="contain"
-          />
-        </View>
-      </LinearGradient>
-
-      {/* Login Form */}
-      <View style={styles.formContainer}>
-        <Text style={styles.title}>Login</Text>
-        
-        <View style={styles.signupPrompt}>
-          <Text style={styles.signupText}>Don't have an account?</Text>
-          <Link href="/(auth)/signup" asChild>
-            <TouchableOpacity>
-              <Text style={styles.signupLink}>Sign Up</Text>
-            </TouchableOpacity>
-          </Link>
-        </View>
-
-        {/* User Type Selection */}
-        <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 16 }}>
-          <TouchableOpacity
-            style={[{
-              flex: 1,
-              marginRight: 8,
-              borderWidth: 1,
-              borderColor: userType === 'vendor' ? '#3399ff' : '#ccc',
-              backgroundColor: userType === 'vendor' ? '#e6f2ff' : '#fff',
-              paddingVertical: 12,
-              borderRadius: 8,
-              alignItems: 'center',
-              flexDirection: 'row',
-              justifyContent: 'center',
-            }]}
-            onPress={() => setUserType('vendor')}
-          >
-            <Image
-              source={require('../../assets/images/vendor.png')}
-              style={{ width: 24, height: 24, marginRight: 8 }}
+        {/* Header */}
+        <LinearGradient
+          colors={['#0066ff', '#0052cc']}
+          style={[styles.header, { paddingTop: insets.top }]}
+        >
+          <View style={styles.imageContainer}>
+            <Image 
+              source={require('../../assets/images/signin.png')}
+              style={styles.headerImage}
               resizeMode="contain"
             />
-            <Text style={{ color: userType === 'vendor' ? '#3399ff' : '#333', fontWeight: 'bold' }}>Vendor</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[{
-              flex: 1,
-              marginLeft: 8,
-              borderWidth: 1,
-              borderColor: userType === 'customer' ? '#3399ff' : '#ccc',
-              backgroundColor: userType === 'customer' ? '#e6f2ff' : '#fff',
-              paddingVertical: 12,
-              borderRadius: 8,
-              alignItems: 'center',
-              flexDirection: 'row',
-              justifyContent: 'center',
-            }]}
-            onPress={() => setUserType('customer')}
-          >
-            <Image
-              source={require('../../assets/images/customer.png')}
-              style={{ width: 24, height: 24, marginRight: 8 }}
-              resizeMode="contain"
-            />
-            <Text style={{ color: userType === 'customer' ? '#3399ff' : '#333', fontWeight: 'bold' }}>Customer</Text>
-          </TouchableOpacity>
-        </View>
+          </View>
+        </LinearGradient>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            placeholder="email@example.com"
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        </View>
+        {/* Login Form */}
+        <View style={styles.formContainer}>
+          <Text style={styles.title}>Login</Text>
+          
+          <View style={styles.signupPrompt}>
+            <Text style={styles.signupText}>Don't have an account?</Text>
+            <Link href="/(auth)/signup" asChild>
+              <TouchableOpacity>
+                <Text style={styles.signupLink}>Sign Up</Text>
+              </TouchableOpacity>
+            </Link>
+          </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Password</Text>
-          <View style={styles.passwordContainer}>
-            <TextInput
-              style={styles.passwordInput}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              placeholder="********"
-            />
-            <TouchableOpacity 
-              style={styles.eyeIcon} 
-              onPress={() => setShowPassword(!showPassword)}
+          {/* User Type Selection */}
+          <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 16 }}>
+            <TouchableOpacity
+              style={[{
+                flex: 1,
+                marginRight: 8,
+                borderWidth: 1,
+                borderColor: userType === 'vendor' ? '#3399ff' : '#ccc',
+                backgroundColor: userType === 'vendor' ? '#e6f2ff' : '#fff',
+                paddingVertical: 12,
+                borderRadius: 8,
+                alignItems: 'center',
+                flexDirection: 'row',
+                justifyContent: 'center',
+              }]}
+              onPress={() => setUserType('vendor')}
             >
-              <MaterialIcons 
-                name={showPassword ? "visibility" : "visibility-off"} 
-                size={22} 
-                color="#999" 
+              <Image
+                source={require('../../assets/images/vendor.png')}
+                style={{ width: 24, height: 24, marginRight: 8 }}
+                resizeMode="contain"
+              />
+              <Text style={{ color: userType === 'vendor' ? '#3399ff' : '#333', fontWeight: 'bold' }}>Vendor</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[{
+                flex: 1,
+                marginLeft: 8,
+                borderWidth: 1,
+                borderColor: userType === 'customer' ? '#3399ff' : '#ccc',
+                backgroundColor: userType === 'customer' ? '#e6f2ff' : '#fff',
+                paddingVertical: 12,
+                borderRadius: 8,
+                alignItems: 'center',
+                flexDirection: 'row',
+                justifyContent: 'center',
+              }]}
+              onPress={() => setUserType('customer')}
+            >
+              <Image
+                source={require('../../assets/images/customer.png')}
+                style={{ width: 24, height: 24, marginRight: 8 }}
+                resizeMode="contain"
+              />
+              <Text style={{ color: userType === 'customer' ? '#3399ff' : '#333', fontWeight: 'bold' }}>Customer</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="email@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Password</Text>
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                placeholder="********"
+              />
+              <TouchableOpacity 
+                style={styles.eyeIcon} 
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <MaterialIcons 
+                  name={showPassword ? "visibility" : "visibility-off"} 
+                  size={22} 
+                  color="#999" 
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.optionsRow}>
+            <TouchableOpacity 
+              style={styles.rememberMeContainer}
+              onPress={() => setRememberMe(!rememberMe)}
+            >
+              <View style={styles.checkbox}>
+                {rememberMe && (
+                  <MaterialIcons name="check" size={14} color="#0066ff" />
+                )}
+              </View>
+              <Text style={styles.rememberMeText}>Remember me</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity>
+              <Text style={styles.forgotPassword}>Forgot Password?</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity 
+            style={styles.signInButton}
+            onPress={handleSignIn}
+          >
+            <Text style={styles.signInButtonText}>Log In</Text>
+          </TouchableOpacity>
+
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>Or</Text>
+            <View style={styles.divider} />
+          </View>
+
+          <View style={styles.socialButtonsContainer}>
+            <TouchableOpacity 
+              style={styles.socialButton}
+              onPress={() => {
+                // Handle Google sign in
+                console.log('Google sign in')
+                router.push("/onboarding" as const)
+              }}
+            >
+              <Image 
+                source={require('../../assets/images/google.png')} 
+                style={styles.socialIcon}
+                resizeMode="contain"
               />
             </TouchableOpacity>
           </View>
         </View>
-
-        <View style={styles.optionsRow}>
-          <TouchableOpacity 
-            style={styles.rememberMeContainer}
-            onPress={() => setRememberMe(!rememberMe)}
-          >
-            <View style={styles.checkbox}>
-              {rememberMe && (
-                <MaterialIcons name="check" size={14} color="#0066ff" />
-              )}
-            </View>
-            <Text style={styles.rememberMeText}>Remember me</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity>
-            <Text style={styles.forgotPassword}>Forgot Password?</Text>
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity 
-          style={styles.signInButton}
-          onPress={handleSignIn}
-        >
-          <Text style={styles.signInButtonText}>Log In</Text>
-        </TouchableOpacity>
-
-        <View style={styles.dividerContainer}>
-          <View style={styles.divider} />
-          <Text style={styles.dividerText}>Or</Text>
-          <View style={styles.divider} />
-        </View>
-
-        <View style={styles.socialButtonsContainer}>
-          <TouchableOpacity 
-            style={styles.socialButton}
-            onPress={() => {
-              // Handle Google sign in
-              console.log('Google sign in')
-              router.push("/onboarding" as const)
-            }}
-          >
-            <Image 
-              source={require('../../assets/images/google.png')} 
-              style={styles.socialIcon}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
-        </View>
       </View>
-    </View>
+    </ScrollView>
   )
 }
 
 export default SignInScreen
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+  },
+  
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
