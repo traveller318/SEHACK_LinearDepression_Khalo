@@ -56,23 +56,25 @@ export default function VendorInformationForm() {
 
   // Validate phone number (international format)
   const validatePhone = (value: string) => {
-    const phoneRegex = /^\+[1-9]\d{1,14}$/;
-    if (!phoneRegex.test(value)) {
-      setPhoneError('Please enter a valid international phone number (e.g. +919876543210)');
-      return false;
-    }
-    setPhoneError('');
+    // TODO: Add phone number validation
+    // const phoneRegex = /^\+[1-9]\d{1,14}$/;
+    // if (!phoneRegex.test(value)) {
+    //   setPhoneError('Please enter a valid international phone number (e.g. +919876543210)');
+    //   return false;
+    // }
+    // setPhoneError('');
     return true;
   };
 
   // Validate GST number
   const validateGST = (value: string) => {
-    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/;
-    if (!gstRegex.test(value)) {
-      setGstError('Please enter a valid 15-character GST number (e.g. 29ABCDE1234F2Z5)');
-      return false;
-    }
-    setGstError('');
+    // TODO: Add GST number validation
+    // const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/;
+    // if (!gstRegex.test(value)) {
+    //   setGstError('Please enter a valid 15-character GST number (e.g. 29ABCDE1234F2Z5)');
+    //   return false;
+    // }
+    // setGstError('');
     return true;
   };
 
