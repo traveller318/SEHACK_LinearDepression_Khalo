@@ -21,8 +21,6 @@ router.post('/createCustomerProfile', async (req, res) => {
       health_sensitivity,
       is_tourist,
     } = req.body
-    console.log("entered createCustomerProfile");
-    
     const { data, error } = await supabase.from('customer_profiles').insert({
       user_id,
       home_city,
@@ -118,33 +116,4 @@ router.post('/createMenuItem', async (req, res) => {
   }
 })
 
-// CREATE TABLE orders (
-//     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-//     stall_id UUID REFERENCES stalls(id) ON DELETE CASCADE,
-//     customer_id UUID REFERENCES users(id) ON DELETE CASCADE,
-//     menu_item_id UUID REFERENCES menu_items(id) ON DELETE SET NULL,  -- Optional
-//     order_value NUMERIC(10, 2) DEFAULT 0.00,
-//     order_expenses NUMERIC(10, 2) DEFAULT 0.00,
-//     date TIMESTAMP DEFAULT now(),
-//     created_at TIMESTAMP DEFAULT now(),
-//     updated_at TIMESTAMP DEFAULT now()
-// );
-
-router.post('/createOrder', async (req, res) => {
-  try {
-    const { stall_id, customer_id, menu_item_id, order_value, order_expenses } =
-      req.body
-    const { data, error } = await supabase.from('orders').insert({
-      stall_id,
-      customer_id,
-      menu_item_id,
-      order_value,
-      order_expenses,
-    })
-    if (error) throw error
-    res.status(200).json(data)
-  } catch (error) {
-    res.status(400).json({ error: error.message })
-  }
-})
 export default router
