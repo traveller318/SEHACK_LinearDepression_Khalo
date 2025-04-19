@@ -43,6 +43,7 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true)
   const [filterModalVisible, setFilterModalVisible] = useState(false)
   const [selectedTags, setSelectedTags] = useState<string[]>(['Bestseller'])
+  const [allStalls, setAllStalls] = useState([])
   const [nearbyStalls, setNearbyStalls] = useState([
     {
       name: 'Street Corner',
@@ -80,6 +81,23 @@ export default function DashboardScreen() {
       distance: '1.5 km',
     },
   ])
+  useEffect(() => {
+    const fetchAllStalls = async () => {
+      try {
+        const response = await fetch(
+          'https://khalo-r5v5.onrender.com/customer/getAllStalls'
+        )
+        const data = await response.json()
+        console.log(data)
+
+        setAllStalls(data)
+      } catch (error) {
+        console.error('Error fetching all stalls:', error)
+      }
+    }
+
+    fetchAllStalls()
+  }, [])
 
   useEffect(() => {
     if (user && user.user_metadata?.user_type !== 'customer') {
@@ -251,8 +269,6 @@ export default function DashboardScreen() {
     north_indian: require('./icons/turban.png'),
     italian: require('./icons/pizza.png'),
   }
-
-  // console.log("nearbyStalls", nearbyStalls);
 
   return (
     <>
@@ -465,79 +481,9 @@ export default function DashboardScreen() {
             <Text style={styles.sectionTitle}>All Stalls</Text>
 
             <View style={styles.allStallsContainer}>
-              <VerticalStallCard
-                name="Suraj Lama Momos"
-                image="https://via.placeholder.com/150/ffffff/000000?text=SL"
-                cuisine="Tibetan, Chinese"
-                distance="3 km"
-                deliveryTime="30-40 mins"
-                rating={4.2}
-                hygieneScore={4}
-                verified={true}
-              />
-              <VerticalStallCard
-                name="Street Corner"
-                cuisine="Indian"
-                distance="0.3 km"
-                deliveryTime="15-20 mins"
-                rating={4.2}
-                hygieneScore={4}
-                verified={true}
-              />
-              <VerticalStallCard
-                name="Local Delights"
-                cuisine="Chinese"
-                distance="0.5 km"
-                deliveryTime="20-25 mins"
-                rating={4.4}
-                hygieneScore={3}
-                verified={false}
-              />
-              <VerticalStallCard
-                name="Metro Eats"
-                cuisine="Fast Food"
-                distance="0.8 km"
-                deliveryTime="25-30 mins"
-                rating={4.1}
-                hygieneScore={5}
-                verified={true}
-              />
-              <VerticalStallCard
-                name="Urban Bites"
-                cuisine="Italian"
-                distance="1.2 km"
-                deliveryTime="30-35 mins"
-                rating={4.6}
-                hygieneScore={4}
-                verified={true}
-              />
-              <VerticalStallCard
-                name="City Flavors"
-                cuisine="Mexican"
-                distance="1.5 km"
-                deliveryTime="35-40 mins"
-                rating={4.3}
-                hygieneScore={3}
-                verified={false}
-              />
-              <VerticalStallCard
-                name="Foodie Heaven"
-                cuisine="Thai"
-                distance="1.7 km"
-                deliveryTime="30-35 mins"
-                rating={4.7}
-                hygieneScore={5}
-                verified={true}
-              />
-              <VerticalStallCard
-                name="Spice Corner"
-                cuisine="Indian"
-                distance="1.9 km"
-                deliveryTime="25-30 mins"
-                rating={4.5}
-                hygieneScore={4}
-                verified={true}
-              />
+              {allStalls.map((stall, index) => (
+                <VerticalStallCard key={index} {...stall} />
+              ))}
             </View>
           </View>
 
@@ -861,7 +807,7 @@ interface VerticalStallCardProps {
 
 const VerticalStallCard = ({
   name,
-  image,
+  image_url,
   cuisine,
   distance,
   deliveryTime,
@@ -875,7 +821,7 @@ const VerticalStallCard = ({
         <Image
           source={{
             uri:
-              image ||
+              image_url ||
               `https://via.placeholder.com/150/ffffff/000000?text=${name
                 .split(' ')
                 .map((s) => s[0])
