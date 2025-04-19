@@ -54,7 +54,7 @@ class WhatsAppNotifier:
 
         message = (
             "🔍 *Cleanliness Improvement Report* 🔍\n\n"
-            f"🏆 *Rating:* {report.get('cleanliness_rating', 'N/A')}/10\n\n"
+            f"🏆 *Rating:* {report.get('cleanliness_rating', 'N/A')}/5\n\n"
             "🚨 *Key Issues Found:*\n"
         )
 
