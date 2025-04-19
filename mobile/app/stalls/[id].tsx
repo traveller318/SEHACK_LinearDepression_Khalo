@@ -908,8 +908,6 @@ const StallPage = () => {
     outputRange: [0, 1],
     extrapolate: 'clamp',
   })
-  // const temp = useAuth()
-  // console.log(temp)
 
   const [REVIEWS, setReviews] = useState([
     {
