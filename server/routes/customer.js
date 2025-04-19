@@ -89,7 +89,7 @@ router.get('/getReviews/:stall_id', async (req, res) => {
 
 router.post('/getNearbyStalls', async (req, res) => {
   try {
-    const { lat, lng, radius } = req.body // lat, lng, and radius should be sent in the request body
+    const { lat, lng, radius = 2500 } = req.body // lat, lng, and radius should be sent in the request body
 
     // Validate that lat, lng, and radius are provided
     if (!lat || !lng || !radius) {
@@ -139,7 +139,6 @@ router.post('/getKeywordStalls', async (req, res) => {
       console.error('Supabase RPC error:', error)
       return res.status(500).json({ error: error.message })
     }
-
     res.status(200).json(data)
   } catch (err) {
     console.error('Server error:', err)
