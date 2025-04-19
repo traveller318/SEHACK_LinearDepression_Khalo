@@ -114,7 +114,7 @@ export default function CustomerPreferencesForm() {
 
       // Prepare data for submission
       const profileData = {
-        user_id: user?.id,
+        user_id: user?.id,  
         home_city: homeCity,
         is_tourist: isTourist,
         dietary_preferences: updatedDietaryPreferences,
@@ -122,9 +122,9 @@ export default function CustomerPreferencesForm() {
       };
 
       console.log("profileData", profileData);
-
+    
       // Call API to create customer profile
-      const response = await fetch('http://192.168.137.1:3000/customer/createCustomerProfile', {
+      const response = await fetch('http://10.10.40.195:3000/customer/createCustomerProfile', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
