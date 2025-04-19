@@ -124,13 +124,16 @@ export default function CustomerPreferencesForm() {
       console.log("profileData", profileData);
 
       // Call API to create customer profile
-      const response = await fetch('http://localhost:3000/customer/createCustomerProfile', {
+      const response = await fetch('http://192.168.137.1:3000/customer/createCustomerProfile', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(profileData),
       });
+
+      console.log("response", response);
+      
 
       if (response.status === 200) {
         // Navigate to dashboard on success
