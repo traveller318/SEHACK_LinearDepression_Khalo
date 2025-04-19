@@ -49,7 +49,7 @@ export const createReview = async (stall_id, user_id, rating, review_text) => {
   }
 }
 
-const getStallReview = async (stall_id) => {
+export const getStallReview = async (stall_id) => {
   try {
     const response = await fetch(
       `https://khalo-r5v5.onrender.com/customer/getReviews/${stall_id}`
@@ -62,7 +62,7 @@ const getStallReview = async (stall_id) => {
   }
 }
 
-const getKeywordStalls = async (keywords) => {
+export const getKeywordStalls = async (keywords) => {
   try {
     const response = await fetch(
       'https://khalo-r5v5.onrender.com/customer/getKeywordStalls',
@@ -81,5 +81,28 @@ const getKeywordStalls = async (keywords) => {
   } catch (error) {
     console.error('Error fetching keyword stalls:', error)
     return []
+  }
+}
+
+export const getSingleStall = async (stall_id) => {
+  try {
+    const response = await fetch(`/api/getSingleStall/${stall_id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    // Check if the response is successful
+    if (response.ok) {
+      const data = await response.json()
+      console.log('Stall data:', data)
+      return data // You can use this data as needed
+    } else {
+      const errorData = await response.json()
+      console.log('Failed to fetch stall data:', errorData)
+    }
+  } catch (error) {
+    console.error('Error fetching stall data:', error)
   }
 }
