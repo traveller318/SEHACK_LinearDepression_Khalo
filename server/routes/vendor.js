@@ -22,14 +22,17 @@ router.post('/createVendorProfile', async (req, res) => {
       location,
       certification_image,
     } = req.body
-    const { data, error } = await supabase.from('vendor_profiles').insert({
-      user_id,
-      phone,
-      gst_number,
-      certification,
-      location,
-      certification_image,
-    })
+    const { data, error } = await supabase
+      .from('vendor_profiles')
+      .insert({
+        user_id,
+        phone,
+        gst_number,
+        certification,
+        location,
+        certification_image,
+      })
+      .select()
     if (error) throw error
     res.status(200).json(data)
   } catch (error) {
@@ -54,16 +57,20 @@ router.post('/createStall', async (req, res) => {
   try {
     const { vendor_id, name, location, lat, lng, cuisine, hygiene_score } =
       req.body
-    const { data, error } = await supabase.from('stalls').insert({
-      vendor_id,
-      name,
-      location,
-      lat,
-      lng,
-      cuisine,
-      hygiene_score,
-    })
+    const { data, error } = await supabase
+      .from('stalls')
+      .insert({
+        vendor_id,
+        name,
+        location,
+        lat,
+        lng,
+        cuisine,
+        hygiene_score,
+      })
+      .select()
     if (error) throw error
+    console.log(data)
     res.status(200).json(data)
   } catch (error) {
     res.status(400).json({ error: error.message })
@@ -81,11 +88,14 @@ router.post('/createStall', async (req, res) => {
 router.post('/createImage', async (req, res) => {
   try {
     const { stall_id, user_id, image_url } = req.body
-    const { data, error } = await supabase.from('images').insert({
-      stall_id,
-      user_id,
-      image_url,
-    })
+    const { data, error } = await supabase
+      .from('images')
+      .insert({
+        stall_id,
+        user_id,
+        image_url,
+      })
+      .select()
     if (error) throw error
     res.status(200).json(data)
   } catch (error) {
@@ -109,13 +119,16 @@ router.post('/createOrder', async (req, res) => {
   try {
     const { stall_id, customer_id, menu_item_id, order_value, order_expenses } =
       req.body
-    const { data, error } = await supabase.from('orders').insert({
-      stall_id,
-      customer_id,
-      menu_item_id,
-      order_value,
-      order_expenses,
-    })
+    const { data, error } = await supabase
+      .from('orders')
+      .insert({
+        stall_id,
+        customer_id,
+        menu_item_id,
+        order_value,
+        order_expenses,
+      })
+      .select()
     if (error) throw error
     res.status(200).json(data)
   } catch (error) {

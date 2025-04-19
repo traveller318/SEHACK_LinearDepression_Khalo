@@ -21,13 +21,16 @@ router.post('/createCustomerProfile', async (req, res) => {
       health_sensitivity,
       is_tourist,
     } = req.body
-    const { data, error } = await supabase.from('customer_profiles').insert({
-      user_id,
-      home_city,
-      dietary_preferences,
-      health_sensitivity,
-      is_tourist,
-    })
+    const { data, error } = await supabase
+      .from('customer_profiles')
+      .insert({
+        user_id,
+        home_city,
+        dietary_preferences,
+        health_sensitivity,
+        is_tourist,
+      })
+      .select()
     if (error) {
       return res.status(400).json({ error: error.message })
     }
@@ -49,13 +52,17 @@ router.post('/createCustomerProfile', async (req, res) => {
 router.post('/createReview', async (req, res) => {
   try {
     const { stall_id, user_id, rating, review_text } = req.body
-    const { data, error } = await supabase.from('reviews').insert({
-      stall_id,
-      user_id,
-      rating,
-      review_text,
-    })
+    const { data, error } = await supabase
+      .from('reviews')
+      .insert({
+        stall_id,
+        user_id,
+        rating,
+        review_text,
+      })
+      .select()
     if (error) throw error
+
     res.status(200).json(data)
   } catch (error) {
     res.status(400).json({ error: error.message })
@@ -72,10 +79,13 @@ router.post('/createReview', async (req, res) => {
 router.post('/createVisit', async (req, res) => {
   try {
     const { user_id, stall_id } = req.body
-    const { data, error } = await supabase.from('visits').insert({
-      user_id,
-      stall_id,
-    })
+    const { data, error } = await supabase
+      .from('visits')
+      .insert({
+        user_id,
+        stall_id,
+      })
+      .select()
     if (error) throw error
     res.status(200).json(data)
   } catch (error) {
@@ -100,15 +110,18 @@ router.post('/createMenuItem', async (req, res) => {
   try {
     const { stall_id, name, description, price, category, image_url, traits } =
       req.body
-    const { data, error } = await supabase.from('menu_items').insert({
-      stall_id,
-      name,
-      description,
-      price,
-      category,
-      image_url,
-      traits,
-    })
+    const { data, error } = await supabase
+      .from('menu_items')
+      .insert({
+        stall_id,
+        name,
+        description,
+        price,
+        category,
+        image_url,
+        traits,
+      })
+      .select()
     if (error) throw error
     res.status(200).json(data)
   } catch (error) {
@@ -124,6 +137,7 @@ router.get('/getReviews/:stall_id', async (req, res) => {
       .from('reviews')
       .select('rating, review_text')
       .eq('stall_id', stall_id)
+      .select()
     if (error) throw error
     res.status(200).json(data)
   } catch (error) {
