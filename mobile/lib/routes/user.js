@@ -86,11 +86,14 @@ export const getKeywordStalls = async (keywords) => {
 
 export const getSingleStall = async (stall_id) => {
   try {
-    const response = await fetch(`/api/getSingleStall/${stall_id}`, {
-      method: 'GET',
+    const response = await fetch(`/api/getSingleStall`, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        stall_id,
+      }),
     })
 
     // Check if the response is successful

@@ -10,7 +10,7 @@ import {
   Dimensions,
   Animated,
   Modal,
-  ActivityIndicator
+  ActivityIndicator,
 } from 'react-native'
 import React, { useEffect, useState, useRef } from 'react'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -18,45 +18,46 @@ import {
   MaterialIcons,
   FontAwesome,
   Ionicons,
-  MaterialCommunityIcons
+  MaterialCommunityIcons,
 } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const { width } = Dimensions.get('window')
-
+import { getStallReview, getSingleStall } from '../../lib/routes/user.js'
+import { getMenuItems } from '../../lib/routes/vendor.js'
 // Define types for our data
 interface MenuItem {
-  id: string;
-  name: string;
-  description: string;
-  price: string;
-  image: string;
-  isVeg: boolean;
-  isRecommended: boolean;
-  rating: number;
+  id: string
+  name: string
+  description: string
+  price: string
+  image: string
+  isVeg: boolean
+  isRecommended: boolean
+  rating: number
 }
 
 interface Review {
-  id: string;
-  userName: string;
-  rating: number;
-  date: string;
-  comment: string;
-  userImage: string;
+  id: string
+  userName: string
+  rating: number
+  date: string
+  comment: string
+  userImage: string
 }
 
 interface StallData {
-  name: string;
-  rating: number;
-  totalReviews: number;
-  cuisine: string;
-  address: string;
-  distance: string;
-  openingTime: string;
-  phoneNumber: string;
-  hygieneScore: number;
-  avgPrice: string;
+  name: string
+  rating: number
+  totalReviews: number
+  cuisine: string
+  address: string
+  distance: string
+  openingTime: string
+  phoneNumber: string
+  hygieneScore: number
+  avgPrice: string
 }
 
 // Sample data for menu items
@@ -69,7 +70,7 @@ const MENU_ITEMS: MenuItem[] = [
     image: 'https://source.unsplash.com/random/300x200/?biryani',
     isVeg: false,
     isRecommended: true,
-    rating: 4.8
+    rating: 4.8,
   },
   {
     id: '2',
@@ -79,7 +80,7 @@ const MENU_ITEMS: MenuItem[] = [
     image: 'https://source.unsplash.com/random/300x200/?paneer',
     isVeg: true,
     isRecommended: true,
-    rating: 4.6
+    rating: 4.6,
   },
   {
     id: '3',
@@ -89,7 +90,7 @@ const MENU_ITEMS: MenuItem[] = [
     image: 'https://source.unsplash.com/random/300x200/?naan',
     isVeg: true,
     isRecommended: false,
-    rating: 4.5
+    rating: 4.5,
   },
   {
     id: '4',
@@ -99,7 +100,7 @@ const MENU_ITEMS: MenuItem[] = [
     image: 'https://source.unsplash.com/random/300x200/?curry',
     isVeg: true,
     isRecommended: false,
-    rating: 4.7
+    rating: 4.7,
   },
   {
     id: '5',
@@ -109,8 +110,8 @@ const MENU_ITEMS: MenuItem[] = [
     image: 'https://source.unsplash.com/random/300x200/?sweet',
     isVeg: true,
     isRecommended: true,
-    rating: 4.9
-  }
+    rating: 4.9,
+  },
 ]
 
 // Sample data for stall images
@@ -118,7 +119,7 @@ const STALL_IMAGES = [
   'https://source.unsplash.com/random/800x600/?streetfood,1',
   'https://source.unsplash.com/random/800x600/?restaurant,1',
   'https://source.unsplash.com/random/800x600/?food,1',
-  'https://source.unsplash.com/random/800x600/?chef,1'
+  'https://source.unsplash.com/random/800x600/?chef,1',
 ]
 
 // Sample data for reviews
@@ -128,25 +129,28 @@ const REVIEWS: Review[] = [
     userName: 'Priya M',
     rating: 5,
     date: '2 days ago',
-    comment: 'Absolutely loved the food! The biryani was authentic and flavorful. Highly recommended!',
-    userImage: 'https://source.unsplash.com/random/100x100/?woman,1'
+    comment:
+      'Absolutely loved the food! The biryani was authentic and flavorful. Highly recommended!',
+    userImage: 'https://source.unsplash.com/random/100x100/?woman,1',
   },
   {
     id: '2',
     userName: 'Rahul S',
     rating: 4,
     date: '1 week ago',
-    comment: 'Great taste and value for money. The portion sizes are good and service is prompt.',
-    userImage: 'https://source.unsplash.com/random/100x100/?man,1'
+    comment:
+      'Great taste and value for money. The portion sizes are good and service is prompt.',
+    userImage: 'https://source.unsplash.com/random/100x100/?man,1',
   },
   {
     id: '3',
     userName: 'Ananya K',
     rating: 5,
     date: '2 weeks ago',
-    comment: 'This place never disappoints! The paneer tikka is to die for. My favorite street stall in the area.',
-    userImage: 'https://source.unsplash.com/random/100x100/?woman,2'
-  }
+    comment:
+      'This place never disappoints! The paneer tikka is to die for. My favorite street stall in the area.',
+    userImage: 'https://source.unsplash.com/random/100x100/?woman,2',
+  },
 ]
 
 const styles = StyleSheet.create({
@@ -900,48 +904,95 @@ const StallPage = () => {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const scrollY = useRef(new Animated.Value(0)).current
-  const [activeTab, setActiveTab] = useState<'menu' | 'reviews' | 'info'>('menu')
+  const [activeTab, setActiveTab] = useState<'menu' | 'reviews' | 'info'>(
+    'menu'
+  )
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [reviewModalVisible, setReviewModalVisible] = useState(false)
   const [userRating, setUserRating] = useState(0)
   const [reviewText, setReviewText] = useState('')
   const [isLoading, setIsLoading] = useState(true)
-  const [hygieneReportModalVisible, setHygieneReportModalVisible] = useState(false)
-  const [stallData, setStallData] = useState<StallData>({
-    name: 'Street Corner Delights',
-    rating: 4.5,
-    totalReviews: 245,
-    cuisine: 'North Indian, Chinese',
-    address: '123 Food Street, Mumbai',
-    distance: '1.2 km',
-    openingTime: '10:00 AM - 10:00 PM',
-    phoneNumber: '+91 98765 43210',
-    hygieneScore: 4.2,
-    avgPrice: '₹150 for one'
-  })
+  const [hygieneReportModalVisible, setHygieneReportModalVisible] =
+    useState(false)
+
+  // State for our API data
+  const [stallData, setStallData] = useState<any>(null)
+  const [menuItems, setMenuItems] = useState<any[]>([])
+  const [reviews, setReviews] = useState<any[]>([])
+  const [categories, setCategories] = useState<string[]>(['All'])
 
   const headerHeight = 250
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, headerHeight - 60],
     outputRange: [0, 1],
-    extrapolate: 'clamp'
+    extrapolate: 'clamp',
   })
 
+  // Fetch data from APIs
   useEffect(() => {
-    // Simulate fetching data
-    setTimeout(() => {
-      // Here you would fetch actual data using the id
-      
-      console.log('Stall ID:', id)
-      setIsLoading(false)
-    }, 1500)
+    const fetchAllData = async () => {
+      try {
+        setIsLoading(true)
+
+        // Fetch stall data
+        const stallResponse = await getSingleStall(id)
+        if (stallResponse && stallResponse.length > 0) {
+          setStallData(stallResponse[0])
+        }
+
+        // Fetch menu items
+        const menuResponse = await getMenuItems(id)
+        if (menuResponse && menuResponse.length > 0) {
+          setMenuItems(menuResponse)
+
+          // Extract unique categories from menu items
+          const uniqueCategories = [
+            'All',
+            ...new Set(menuResponse.map((item: any) => item.category)),
+          ]
+          setCategories(uniqueCategories)
+        }
+
+        // Fetch reviews
+        // Assuming you have a getReviews function similar to the other API functions
+        try {
+          const response = await fetch('/api/getReviews', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ stall_id: id }),
+          })
+
+          if (response.ok) {
+            const reviewsData = await response.json()
+            setReviews(reviewsData)
+          }
+        } catch (error) {
+          console.error('Error fetching reviews:', error)
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (id) {
+      fetchAllData()
+    }
   }, [id])
 
   const renderImageCarousel = () => {
+    // Use stall image if available, otherwise use placeholders
+    const images = stallData?.image_url
+      ? [stallData.image_url]
+      : STALL_IMAGES || ['https://via.placeholder.com/400x300']
+
     return (
       <View style={styles.carouselContainer}>
         <FlatList
-          data={STALL_IMAGES}
+          data={images}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
@@ -954,8 +1005,8 @@ const StallPage = () => {
           colors={['rgba(0,0,0,0.7)', 'transparent']}
           style={styles.headerGradient}
         />
-        <TouchableOpacity 
-          style={[styles.backButton, { marginTop: insets.top }]} 
+        <TouchableOpacity
+          style={[styles.backButton, { marginTop: insets.top }]}
           onPress={() => router.back()}
         >
           <MaterialIcons name="arrow-back" size={28} color="#fff" />
@@ -973,72 +1024,116 @@ const StallPage = () => {
   }
 
   const renderStallInfo = () => {
+    if (!stallData) return null
+
     return (
       <View style={styles.stallInfoContainer}>
         <View style={styles.nameContainer}>
           <Text style={styles.stallName}>{stallData.name}</Text>
-          <MaterialCommunityIcons name="check-decagram" size={24} color="#4CAF50" />
+          {stallData.is_verified && (
+            <MaterialCommunityIcons
+              name="check-decagram"
+              size={24}
+              color="#4CAF50"
+            />
+          )}
         </View>
-        
+
         <View style={styles.tagsContainer}>
-          {stallData.cuisine.split(',').map((cuisine, index) => (
-            <View key={index} style={styles.tagChip}>
-              <Text style={styles.tagText}>{cuisine.trim()}</Text>
-            </View>
-          ))}
+          {stallData.cuisine &&
+            stallData.cuisine.split(',').map((cuisine, index) => (
+              <View key={index} style={styles.tagChip}>
+                <Text style={styles.tagText}>{cuisine.trim()}</Text>
+              </View>
+            ))}
           <View style={styles.tagChip}>
             <MaterialIcons name="access-time" size={14} color="#666" />
-            <Text style={styles.tagText}>{stallData.distance}</Text>
+            <Text style={styles.tagText}>1.2 km</Text>
           </View>
         </View>
 
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{stallData.rating}</Text>
+            <Text style={styles.statValue}>
+              {reviews.length > 0
+                ? (
+                    reviews.reduce((sum, review) => sum + review.rating, 0) /
+                    reviews.length
+                  ).toFixed(1)
+                : 'N/A'}
+            </Text>
             <View style={styles.statRatingStars}>
               {Array(5)
                 .fill(0)
-                .map((_, i) => (
-                  <MaterialIcons 
-                    key={i} 
-                    name="star" 
-                    size={14} 
-                    color={i < Math.floor(stallData.rating) ? "#FFD700" : "#e0e0e0"} 
-                  />
-                ))}
+                .map((_, i) => {
+                  const avgRating =
+                    reviews.length > 0
+                      ? reviews.reduce(
+                          (sum, review) => sum + review.rating,
+                          0
+                        ) / reviews.length
+                      : 0
+                  return (
+                    <MaterialIcons
+                      key={i}
+                      name="star"
+                      size={14}
+                      color={i < Math.floor(avgRating) ? '#FFD700' : '#e0e0e0'}
+                    />
+                  )
+                })}
             </View>
-            <Text style={styles.statLabel}>{stallData.totalReviews} ratings</Text>
+            <Text style={styles.statLabel}>{reviews.length} ratings</Text>
           </View>
-          
+
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{stallData.hygieneScore}</Text>
+            <Text style={styles.statValue}>
+              {stallData.hygiene_score || 'N/A'}
+            </Text>
             <View style={styles.statRatingStars}>
               {Array(5)
                 .fill(0)
                 .map((_, i) => (
-                  <MaterialIcons 
-                    key={i} 
-                    name="star" 
-                    size={14} 
-                    color={i < Math.floor(stallData.hygieneScore) ? "#4CAF50" : "#e0e0e0"} 
+                  <MaterialIcons
+                    key={i}
+                    name="star"
+                    size={14}
+                    color={
+                      i < Math.floor(stallData.hygiene_score || 0)
+                        ? '#4CAF50'
+                        : '#e0e0e0'
+                    }
                   />
                 ))}
             </View>
             <Text style={styles.statLabel}>Hygiene</Text>
           </View>
-          
+
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{stallData.avgPrice}</Text>
+            <Text style={styles.statValue}>
+              {menuItems.length > 0
+                ? `₹${Math.floor(
+                    menuItems.reduce((sum, item) => sum + item.price, 0) /
+                      menuItems.length
+                  )} for one`
+                : 'N/A'}
+            </Text>
             <Text style={styles.statLabel}>Price</Text>
           </View>
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.hygieneReportButton}
           onPress={() => setHygieneReportModalVisible(true)}
         >
-          <MaterialCommunityIcons name="clipboard-check-outline" size={20} color="#fff" />
-          <Text style={styles.hygieneReportButtonText}>View Hygiene Report</Text>
+          <MaterialCommunityIcons
+            name="clipboard-check-outline"
+            size={20}
+            color="#fff"
+          />
+          <Text style={styles.hygieneReportButtonText}>
+            View Hygiene Report
+          </Text>
         </TouchableOpacity>
       </View>
     )
@@ -1051,27 +1146,46 @@ const StallPage = () => {
           style={[styles.tab, activeTab === 'menu' && styles.activeTab]}
           onPress={() => setActiveTab('menu')}
         >
-          <Text style={[styles.tabText, activeTab === 'menu' && styles.activeTabText]}>Menu</Text>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'menu' && styles.activeTabText,
+            ]}
+          >
+            Menu
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'reviews' && styles.activeTab]}
           onPress={() => setActiveTab('reviews')}
         >
-          <Text style={[styles.tabText, activeTab === 'reviews' && styles.activeTabText]}>Reviews</Text>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'reviews' && styles.activeTabText,
+            ]}
+          >
+            Reviews
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'info' && styles.activeTab]}
           onPress={() => setActiveTab('info')}
         >
-          <Text style={[styles.tabText, activeTab === 'info' && styles.activeTabText]}>Info</Text>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'info' && styles.activeTabText,
+            ]}
+          >
+            Info
+          </Text>
         </TouchableOpacity>
       </View>
     )
   }
 
   const renderMenuCategories = () => {
-    const categories = ['All', 'Recommended', 'Main Course', 'Bread', 'Desserts']
-    
     return (
       <ScrollView
         horizontal
@@ -1084,14 +1198,14 @@ const StallPage = () => {
             key={category}
             style={[
               styles.categoryChip,
-              selectedCategory === category && styles.activeCategoryChip
+              selectedCategory === category && styles.activeCategoryChip,
             ]}
             onPress={() => setSelectedCategory(category)}
           >
-            <Text 
+            <Text
               style={[
-                styles.categoryText, 
-                selectedCategory === category && styles.activeCategoryText
+                styles.categoryText,
+                selectedCategory === category && styles.activeCategoryText,
               ]}
             >
               {category}
@@ -1102,50 +1216,64 @@ const StallPage = () => {
     )
   }
 
-  const renderMenuItem = ({ item }: { item: typeof MENU_ITEMS[0] }) => (
-    <View style={styles.menuItem}>
-      <View style={styles.menuItemContent}>
-        <View style={styles.menuItemInfo}>
-          <View style={styles.nameAndBadgeRow}>
-            <Text style={styles.menuItemName}>{item.name}</Text>
-            {item.isVeg ? (
-              <View style={styles.vegBadge}>
-                <View style={styles.vegSymbol} />
-              </View>
-            ) : (
-              <View style={styles.nonVegBadge}>
-                <View style={styles.nonVegSymbol} />
-              </View>
-            )}
-            {item.isRecommended && (
-              <View style={styles.recommendedBadge}>
-                <Text style={styles.recommendedText}>Bestseller</Text>
-              </View>
-            )}
+  const renderMenuItem = ({ item }: { item: any }) => {
+    const isVeg = item.traits?.type === 'vegetarian'
+    const price = `₹${item.price.toFixed(2)}`
+    const avgRating = 4.2 // This would ideally come from item-specific ratings
+
+    return (
+      <View style={styles.menuItem}>
+        <View style={styles.menuItemContent}>
+          <View style={styles.menuItemInfo}>
+            <View style={styles.nameAndBadgeRow}>
+              <Text style={styles.menuItemName}>{item.name}</Text>
+              {isVeg ? (
+                <View style={styles.vegBadge}>
+                  <View style={styles.vegSymbol} />
+                </View>
+              ) : (
+                <View style={styles.nonVegBadge}>
+                  <View style={styles.nonVegSymbol} />
+                </View>
+              )}
+              {/* For simplicity, we'll say an item is recommended if its price is above average */}
+              {item.price >
+                menuItems.reduce((sum, menuItem) => sum + menuItem.price, 0) /
+                  menuItems.length && (
+                <View style={styles.recommendedBadge}>
+                  <Text style={styles.recommendedText}>Bestseller</Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.menuItemPrice}>{price}</Text>
+            <Text style={styles.menuItemDescription}>{item.description}</Text>
+            <View style={styles.menuItemRating}>
+              <MaterialIcons name="star" size={16} color="#FFD700" />
+              <Text style={styles.smallRatingText}>{avgRating}</Text>
+            </View>
           </View>
-          <Text style={styles.menuItemPrice}>{item.price}</Text>
-          <Text style={styles.menuItemDescription}>{item.description}</Text>
-          <View style={styles.menuItemRating}>
-            <MaterialIcons name="star" size={16} color="#FFD700" />
-            <Text style={styles.smallRatingText}>{item.rating}</Text>
+          <View style={styles.menuItemImageContainer}>
+            <Image
+              source={{
+                uri: item.image_url || 'https://via.placeholder.com/100',
+              }}
+              style={styles.menuItemImage}
+            />
+            <TouchableOpacity style={styles.addButton}>
+              <Text style={styles.addButtonText}>ADD</Text>
+            </TouchableOpacity>
           </View>
-        </View>
-        <View style={styles.menuItemImageContainer}>
-          <Image source={{ uri: item.image }} style={styles.menuItemImage} />
-          <TouchableOpacity style={styles.addButton}>
-            <Text style={styles.addButtonText}>ADD</Text>
-          </TouchableOpacity>
         </View>
       </View>
-    </View>
-  )
+    )
+  }
 
   const renderReviews = () => {
     return (
       <View style={styles.reviewsContainer}>
         <View style={styles.reviewHeader}>
           <Text style={styles.reviewHeaderText}>Customer Reviews</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.addReviewButton}
             onPress={() => setReviewModalVisible(true)}
           >
@@ -1153,34 +1281,63 @@ const StallPage = () => {
             <MaterialIcons name="edit" size={18} color="#FF5200" />
           </TouchableOpacity>
         </View>
-        
-        {REVIEWS.map(review => (
-          <View key={review.id} style={styles.reviewItem}>
-            <View style={styles.reviewerInfo}>
-              <Image source={{ uri: review.userImage }} style={styles.reviewerImage} />
-              <View style={styles.reviewerDetails}>
-                <Text style={styles.reviewerName}>{review.userName}</Text>
-                <View style={styles.reviewRatingRow}>
-                  {[1, 2, 3, 4, 5].map(star => (
-                    <MaterialIcons 
-                      key={star}
-                      name="star" 
-                      size={18} 
-                      color={star <= review.rating ? "#FFD700" : "#e0e0e0"} 
-                    />
-                  ))}
-                  <Text style={styles.reviewDate}>{review.date}</Text>
+
+        {reviews.length > 0 ? (
+          reviews.map((review) => {
+            // Format date to readable format
+            const reviewDate = new Date(review.created_at).toLocaleDateString(
+              'en-US',
+              {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              }
+            )
+
+            return (
+              <View key={review.id} style={styles.reviewItem}>
+                <View style={styles.reviewerInfo}>
+                  <Image
+                    source={{
+                      uri: 'https://i.pravatar.cc/150?u=' + review.user_id,
+                    }}
+                    style={styles.reviewerImage}
+                  />
+                  <View style={styles.reviewerDetails}>
+                    <Text style={styles.reviewerName}>
+                      User #{review.user_id.substring(0, 5)}
+                    </Text>
+                    <View style={styles.reviewRatingRow}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <MaterialIcons
+                          key={star}
+                          name="star"
+                          size={18}
+                          color={star <= review.rating ? '#FFD700' : '#e0e0e0'}
+                        />
+                      ))}
+                      <Text style={styles.reviewDate}>{reviewDate}</Text>
+                    </View>
+                  </View>
                 </View>
+                <Text style={styles.reviewText}>{review.review_text}</Text>
               </View>
-            </View>
-            <Text style={styles.reviewText}>{review.comment}</Text>
-          </View>
-        ))}
-        
-        <TouchableOpacity style={styles.viewAllReviews}>
-          <Text style={styles.viewAllText}>View all {stallData.totalReviews} reviews</Text>
-          <MaterialIcons name="arrow-forward" size={20} color="#FF5200" />
-        </TouchableOpacity>
+            )
+          })
+        ) : (
+          <Text style={styles.noReviewsText}>
+            No reviews yet. Be the first to leave one!
+          </Text>
+        )}
+
+        {reviews.length > 3 && (
+          <TouchableOpacity style={styles.viewAllReviews}>
+            <Text style={styles.viewAllText}>
+              View all {reviews.length} reviews
+            </Text>
+            <MaterialIcons name="arrow-forward" size={20} color="#FF5200" />
+          </TouchableOpacity>
+        )}
       </View>
     )
   }
@@ -1190,13 +1347,16 @@ const StallPage = () => {
       <View style={styles.infoTabContainer}>
         <View style={styles.infoGroup}>
           <Text style={styles.infoGroupTitle}>Address</Text>
-          <Text style={styles.infoGroupText}>{stallData.address}</Text>
+          <Text style={styles.infoGroupText}>
+            {/* Using placeholder address since location is stored as coordinates */}
+            123 Food Street, Mumbai
+          </Text>
           <TouchableOpacity style={styles.directionsButton}>
             <MaterialIcons name="directions" size={18} color="#FFFFFF" />
             <Text style={styles.directionsButtonText}>Get Directions</Text>
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.infoGroup}>
           <Text style={styles.infoGroupTitle}>Operating Hours</Text>
           <View style={styles.hoursRow}>
@@ -1208,19 +1368,68 @@ const StallPage = () => {
             <Text style={styles.hoursText}>10:00 AM - 11:00 PM</Text>
           </View>
         </View>
-        
+
         <View style={styles.infoGroup}>
           <Text style={styles.infoGroupTitle}>Contact Information</Text>
           <TouchableOpacity style={styles.contactRow}>
             <MaterialIcons name="call" size={18} color="#FF5200" />
-            <Text style={styles.contactInfoText}>{stallData.phoneNumber}</Text>
+            <Text style={styles.contactInfoText}>+91 98765 43210</Text>
           </TouchableOpacity>
         </View>
       </View>
     )
   }
-  
+
   const renderReviewModal = () => {
+    // Submit review function
+    const submitReview = async () => {
+      if (userRating === 0) {
+        alert('Please select a rating')
+        return
+      }
+
+      try {
+        const response = await fetch('/api/submitReview', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            stall_id: id,
+            user_id: 'current_user_id', // This would come from your auth system
+            rating: userRating,
+            review_text: reviewText,
+          }),
+        })
+
+        if (response.ok) {
+          // Refresh reviews
+          const reviewsResponse = await fetch('/api/getReviews', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ stall_id: id }),
+          })
+
+          if (reviewsResponse.ok) {
+            const newReviews = await reviewsResponse.json()
+            setReviews(newReviews)
+          }
+
+          // Reset and close modal
+          setUserRating(0)
+          setReviewText('')
+          setReviewModalVisible(false)
+        } else {
+          alert('Failed to submit review. Please try again.')
+        }
+      } catch (error) {
+        console.error('Error submitting review:', error)
+        alert('An error occurred. Please try again later.')
+      }
+    }
+
     return (
       <Modal
         visible={reviewModalVisible}
@@ -1236,26 +1445,26 @@ const StallPage = () => {
                 <MaterialIcons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
-            
+
             <View style={styles.ratingInputContainer}>
               <Text style={styles.ratingInputLabel}>Rate your experience</Text>
               <View style={styles.starsContainer}>
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <TouchableOpacity 
-                    key={star} 
+                  <TouchableOpacity
+                    key={star}
                     onPress={() => setUserRating(star)}
                   >
-                    <MaterialIcons 
-                      name={userRating >= star ? "star" : "star-border"} 
-                      size={36} 
-                      color={userRating >= star ? "#FFD700" : "#BDBDBD"} 
+                    <MaterialIcons
+                      name={userRating >= star ? 'star' : 'star-border'}
+                      size={36}
+                      color={userRating >= star ? '#FFD700' : '#BDBDBD'}
                       style={styles.starInput}
                     />
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
-            
+
             <Text style={styles.reviewInputLabel}>Share your feedback</Text>
             <TextInput
               style={styles.reviewInput}
@@ -1264,8 +1473,11 @@ const StallPage = () => {
               value={reviewText}
               onChangeText={setReviewText}
             />
-            
-            <TouchableOpacity style={styles.submitButton}>
+
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={submitReview}
+            >
               <LinearGradient
                 colors={['#FF9A5A', '#FF5200']}
                 start={{ x: 0, y: 0 }}
@@ -1282,6 +1494,8 @@ const StallPage = () => {
   }
 
   const renderHygieneReportModal = () => {
+    if (!stallData) return null
+
     return (
       <Modal
         animationType="slide"
@@ -1293,112 +1507,134 @@ const StallPage = () => {
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Hygiene Report</Text>
-              <TouchableOpacity onPress={() => setHygieneReportModalVisible(false)}>
+              <TouchableOpacity
+                onPress={() => setHygieneReportModalVisible(false)}
+              >
                 <MaterialIcons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
-            
+
             <ScrollView style={styles.modalContent}>
               <View style={styles.hygieneScoreContainer}>
                 <View style={styles.hygieneScoreCircle}>
-                  <Text style={styles.hygieneScoreText}>{stallData.hygieneScore}</Text>
+                  <Text style={styles.hygieneScoreText}>
+                    {stallData.hygiene_score}
+                  </Text>
                   <Text style={styles.hygieneScoreLabel}>out of 5</Text>
                 </View>
                 <Text style={styles.hygieneScoreTitle}>Cleanliness Score</Text>
               </View>
-              
+
               <View style={styles.hygieneReportSection}>
-                <Text style={styles.hygieneReportSectionTitle}>Cleanliness Metrics</Text>
-                
+                <Text style={styles.hygieneReportSectionTitle}>
+                  Cleanliness Metrics
+                </Text>
+
                 <View style={styles.hygieneMetricItem}>
                   <View style={styles.hygieneMetricHeader}>
                     <Text style={styles.hygieneMetricName}>Food Handling</Text>
                     <View style={styles.hygieneMetricRating}>
-                      {Array(5).fill(0).map((_, i) => (
-                        <MaterialIcons 
-                          key={i} 
-                          name="star" 
-                          size={16} 
-                          color={i < 4 ? "#4CAF50" : "#e0e0e0"} 
-                        />
-                      ))}
+                      {Array(5)
+                        .fill(0)
+                        .map((_, i) => (
+                          <MaterialIcons
+                            key={i}
+                            name="star"
+                            size={16}
+                            color={
+                              i < stallData.hygiene_score
+                                ? '#4CAF50'
+                                : '#e0e0e0'
+                            }
+                          />
+                        ))}
                     </View>
                   </View>
                   <Text style={styles.hygieneMetricDescription}>
                     Food is prepared and served with proper hygiene practices.
                   </Text>
                 </View>
-                
+
                 <View style={styles.hygieneMetricItem}>
                   <View style={styles.hygieneMetricHeader}>
-                    <Text style={styles.hygieneMetricName}>Personal Hygiene</Text>
+                    <Text style={styles.hygieneMetricName}>
+                      Personal Hygiene
+                    </Text>
                     <View style={styles.hygieneMetricRating}>
-                      {Array(5).fill(0).map((_, i) => (
-                        <MaterialIcons 
-                          key={i} 
-                          name="star" 
-                          size={16} 
-                          color={i < 5 ? "#4CAF50" : "#e0e0e0"} 
-                        />
-                      ))}
+                      {Array(5)
+                        .fill(0)
+                        .map((_, i) => (
+                          <MaterialIcons
+                            key={i}
+                            name="star"
+                            size={16}
+                            color={
+                              i < stallData.hygiene_score
+                                ? '#4CAF50'
+                                : '#e0e0e0'
+                            }
+                          />
+                        ))}
                     </View>
                   </View>
                   <Text style={styles.hygieneMetricDescription}>
-                    Staff maintains excellent personal hygiene with proper attire.
+                    Staff maintains excellent personal hygiene with proper
+                    attire.
                   </Text>
                 </View>
-                
+
                 <View style={styles.hygieneMetricItem}>
                   <View style={styles.hygieneMetricHeader}>
                     <Text style={styles.hygieneMetricName}>Cooking Area</Text>
                     <View style={styles.hygieneMetricRating}>
-                      {Array(5).fill(0).map((_, i) => (
-                        <MaterialIcons 
-                          key={i} 
-                          name="star" 
-                          size={16} 
-                          color={i < 4 ? "#4CAF50" : "#e0e0e0"} 
-                        />
-                      ))}
+                      {Array(5)
+                        .fill(0)
+                        .map((_, i) => (
+                          <MaterialIcons
+                            key={i}
+                            name="star"
+                            size={16}
+                            color={
+                              i < stallData.hygiene_score
+                                ? '#4CAF50'
+                                : '#e0e0e0'
+                            }
+                          />
+                        ))}
                     </View>
                   </View>
                   <Text style={styles.hygieneMetricDescription}>
                     Cooking area is well-maintained and cleaned regularly.
                   </Text>
                 </View>
-                
-                <View style={styles.hygieneMetricItem}>
-                  <View style={styles.hygieneMetricHeader}>
-                    <Text style={styles.hygieneMetricName}>Food Storage</Text>
-                    <View style={styles.hygieneMetricRating}>
-                      {Array(5).fill(0).map((_, i) => (
-                        <MaterialIcons 
-                          key={i} 
-                          name="star" 
-                          size={16} 
-                          color={i < 4 ? "#4CAF50" : "#e0e0e0"} 
-                        />
-                      ))}
-                    </View>
-                  </View>
-                  <Text style={styles.hygieneMetricDescription}>
-                    Ingredients are stored at appropriate temperatures and conditions.
-                  </Text>
-                </View>
               </View>
-              
+
               <View style={styles.hygieneReportSection}>
-                <Text style={styles.hygieneReportSectionTitle}>Last Inspection</Text>
-                <Text style={styles.hygieneReportText}>
-                  This stall was last inspected on <Text style={styles.boldText}>May 15, 2023</Text>.
+                <Text style={styles.hygieneReportSectionTitle}>
+                  Last Inspection
                 </Text>
                 <Text style={styles.hygieneReportText}>
-                  This report is based on inspections conducted by the Food Safety Authority and customer feedback.
+                  This stall was last inspected on{' '}
+                  <Text style={styles.boldText}>
+                    {new Date(stallData.created_at).toLocaleDateString(
+                      'en-US',
+                      {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      }
+                    )}
+                  </Text>
+                  .
+                </Text>
+                <Text style={styles.hygieneReportText}>
+                  This report is based on inspections conducted by the Food
+                  Safety Authority.
                 </Text>
               </View>
             </ScrollView>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.modalButton}
               onPress={() => setHygieneReportModalVisible(false)}
             >
@@ -1419,15 +1655,31 @@ const StallPage = () => {
     )
   }
 
+  // If data failed to load
+  if (!stallData) {
+    return (
+      <View style={styles.loadingContainer}>
+        <MaterialIcons name="error-outline" size={48} color="#FF5200" />
+        <Text style={styles.errorText}>Failed to load stall information.</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.retryButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    )
+  }
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <Animated.View 
+      <Animated.View
         style={[
-          styles.animatedHeader, 
-          { opacity: headerOpacity, paddingTop: insets.top }
+          styles.animatedHeader,
+          { opacity: headerOpacity, paddingTop: insets.top },
         ]}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.headerBackButton}
           onPress={() => router.back()}
         >
@@ -1440,7 +1692,7 @@ const StallPage = () => {
           <MaterialIcons name="share" size={24} color="#333" />
         </TouchableOpacity>
       </Animated.View>
-      
+
       <Animated.ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -1453,20 +1705,24 @@ const StallPage = () => {
         {renderImageCarousel()}
         {renderStallInfo()}
         {renderTabs()}
-        
+
         {activeTab === 'menu' && (
           <>
             {renderMenuCategories()}
             <View style={styles.menuList}>
-              {MENU_ITEMS.map((item) => renderMenuItem({ item }))}
+              {selectedCategory === 'All'
+                ? menuItems.map((item) => renderMenuItem({ item }))
+                : menuItems
+                    .filter((item) => item.category === selectedCategory)
+                    .map((item) => renderMenuItem({ item }))}
             </View>
           </>
         )}
-        
+
         {activeTab === 'reviews' && renderReviews()}
         {activeTab === 'info' && renderInfoTab()}
       </Animated.ScrollView>
-      
+
       <TouchableOpacity style={styles.orderButton}>
         <LinearGradient
           colors={['#FF9A5A', '#FF5200']}
@@ -1478,11 +1734,10 @@ const StallPage = () => {
           <MaterialIcons name="arrow-forward" size={24} color="#FFF" />
         </LinearGradient>
       </TouchableOpacity>
-      
+
       {renderReviewModal()}
       {renderHygieneReportModal()}
     </View>
   )
 }
-
 export default StallPage
