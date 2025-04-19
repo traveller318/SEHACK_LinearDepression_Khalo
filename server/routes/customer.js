@@ -73,7 +73,7 @@ router.post('/createReview', async (req, res) => {
 router.get('/getReviews/:stall_id', async (req, res) => {
   try {
     const { stall_id } = req.params
-    console.log('testing ')
+    // console.log('testing ')
 
     const { data, error } = await supabase
       .from('reviews')
