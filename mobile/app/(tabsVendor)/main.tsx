@@ -55,7 +55,7 @@ export default function VendorHomeScreen() {
 const styles = StyleSheet.create({
   scrollContainer: {
     padding: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#ff8c00',
     flexGrow: 1,
   },
   container: {
@@ -66,11 +66,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
+    backgroundColor: '#000000',
+    padding: 15,
+    borderRadius: 12,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#ff8c00',
   },
   signOutButton: {
     backgroundColor: '#ff4444',
@@ -79,30 +82,31 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   signOutText: {
-    color: 'white',
+    color: '#ffffff',
     fontWeight: 'bold',
   },
   userInfo: {
-    backgroundColor: 'white',
+    backgroundColor: '#000000',
     padding: 20,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 3,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 4,
   },
   label: {
     fontSize: 16,
-    color: '#666',
+    color: '#ff8c00',
     marginBottom: 4,
+    fontWeight: '500',
   },
   value: {
     fontSize: 18,
-    color: '#333',
+    color: '#ffffff',
     marginBottom: 16,
     fontWeight: '500',
   },
