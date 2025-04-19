@@ -30,7 +30,7 @@ export default function VendorInformationForm() {
   const { user } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  
+
   // Form fields
   const [phone, setPhone] = useState('');
   const [gstNumber, setGstNumber] = useState('');
@@ -102,9 +102,8 @@ export default function VendorInformationForm() {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
         // Generate a unique filename
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 10)}.${
-          asset.uri.split('.').pop()
-        }`;
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 10)}.${asset.uri.split('.').pop()
+          }`;
 
         if (isCertificate) {
           setCertificationImage({
@@ -135,40 +134,29 @@ export default function VendorInformationForm() {
     filePath: string
   ): Promise<string> => {
     try {
-      // Make sure user is authenticated before uploading
-      const session = await supabase.auth.getSession();
-      if (!session.data.session) {
-        throw new Error("Not authenticated");
-      }
-      
       const { data, error } = await supabase.storage
         .from(bucketName)
         .upload(filePath, decode(base64Image), {
           contentType: 'image/jpg',
           upsert: true,
         });
-
+  
+      console.log("bucket name", bucketName);
+      console.log("file path", filePath);
+  
       if (error) throw error;
-
+  
       const { data: publicUrlData } = supabase.storage
         .from(bucketName)
         .getPublicUrl(filePath);
-
+  
       return publicUrlData.publicUrl;
     } catch (error: any) {
       console.error('Error uploading image:', error);
-      
-      // If it's an RLS error, show a more specific message
-      if (error.message?.includes('row-level security policy')) {
-        Alert.alert(
-          'Storage Permission Error',
-          'You don\'t have permission to upload to this bucket. Please contact support.'
-        );
-      }
-      
       throw new Error(`Failed to upload image: ${error.message}`);
     }
   };
+  
 
   // Validate form
   const validateForm = () => {
@@ -176,56 +164,56 @@ export default function VendorInformationForm() {
 
     if (!validatePhone(phone)) isValid = false;
     if (!validateGST(gstNumber)) isValid = false;
-    
+
     if (selectedCertifications.length === 0) {
       setCertificationError('Please select at least one certification');
       isValid = false;
     }
-    
+
     if (!certificationImage) {
       setCertImageError('Please upload certification image');
       isValid = false;
     }
-    
+
     if (!profileImage) {
       setProfileImageError('Please upload profile image');
       isValid = false;
     }
-    
+
     if (!location.trim()) {
       isValid = false;
     }
-    
+
     return isValid;
   };
 
   // Submit form
   const handleSubmit = async () => {
     if (!validateForm()) return;
-    
+
     setLoading(true);
-    
+
     try {
       if (!user?.id || !certificationImage?.base64 || !profileImage?.base64) {
         throw new Error('Missing required information');
       }
-      
+
       // Upload certification image
       const certImagePath = `${user.id}/${certificationImage.fileName}`;
       const certImageUrl = await uploadImage(
         certificationImage.base64,
-        'certification-images',
+        'images-certi',
         certImagePath
       );
-      
+
       // Upload profile image
       const profileImagePath = `${user.id}/${profileImage.fileName}`;
       const profileImageUrl = await uploadImage(
         profileImage.base64,
-        'profile-images',
+        'profile-image',
         profileImagePath
       );
-      
+
       // Create vendor profile
       const response = await fetch('http://192.168.137.1:3000/vendor/createVendorProfile', {
         method: 'POST',
@@ -242,20 +230,20 @@ export default function VendorInformationForm() {
           profile_image: profileImageUrl,
         }),
       });
-      
+
       const result = await response.json();
-      
+
       if (response.status === 200) {
         router.replace('/(tabsVendor)/dashboard');
       } else {
         console.log("result uploading");
         console.log(result.error);
-        
+
         Alert.alert('Error', 'Failed to submit information: ' + (result.error || 'Unknown error'));
       }
     } catch (error: any) {
       console.log("normal error");
-       console.log(error);
+      console.log(error);
       console.error('Error submitting form:', error);
       Alert.alert('Error', `Failed to submit information: ${error.message}`);
     } finally {
@@ -347,7 +335,7 @@ export default function VendorInformationForm() {
           {profileImage ? (
             <View style={styles.imagePreviewContainer}>
               <Image source={{ uri: profileImage.uri }} style={styles.previewImage} />
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.changeImageButton}
                 onPress={() => pickImage(false)}
               >
@@ -372,7 +360,7 @@ export default function VendorInformationForm() {
           {certificationImage ? (
             <View style={styles.imagePreviewContainer}>
               <Image source={{ uri: certificationImage.uri }} style={styles.previewImage} />
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.changeImageButton}
                 onPress={() => pickImage(true)}
               >
@@ -416,6 +404,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: 20,
     paddingBottom: 40,
+    marginTop: 40,
   },
   header: {
     backgroundColor: '#ff8c00',
