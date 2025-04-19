@@ -54,7 +54,7 @@ const SignInScreen = () => {
       if (userType === 'vendor') {
         router.replace('/(tabsVendor)/main')
       } else if (userType === 'customer') {
-        router.replace('/(tabsCustomer)/main')
+        router.replace('/UserPreferences')
       } 
     } catch (error: any) {
       setErrorMsg(error.message || 'An unexpected error occurred. Please try again.')

@@ -1,22 +1,52 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Image, SafeAreaView, Dimensions } from 'react-native'
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Image, SafeAreaView, Dimensions, Alert, ActivityIndicator } from 'react-native'
 import React from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { useEffect } from 'react'
-import { MaterialIcons, Feather, Ionicons, FontAwesome5 } from '@expo/vector-icons'
+import { useEffect, useState } from 'react'
+import { MaterialIcons, Feather, Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MapView, { Marker } from 'react-native-maps';
-import { PROVIDER_GOOGLE } from 'react-native-maps'
 import * as Location from 'expo-location'
-
-// import { StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router'
+import CustomerPreferencesForm from '../components/CustomerPreferencesForm'
+import { checkIfProfileExists } from '../../lib/customerProfileHelpers'
+import { supabase } from '../../lib/supabase'
 
 export default function DashboardScreen() {
   const { user } = useAuth()
+  const router = useRouter()
   const insets = useSafeAreaInsets()
   const { height } = Dimensions.get('window');
-  const [location, setLocation] = React.useState<Location.LocationObject | null>(null)
-  const [address, setAddress] = React.useState<string>('')
+  const [location, setLocation] = useState<Location.LocationObject | null>(null)
+  const [address, setAddress] = useState<string>('')
+  const [searchQuery, setSearchQuery] = useState<string>('')
+  const [showPreferences, setShowPreferences] = useState<boolean | null>(null)
+  const [loading, setLoading] = useState(true)
 
+  useEffect(() => {
+    if (user && user.user_metadata?.user_type !== 'customer') {
+      router.replace('/(auth)/signin')
+    }
+  }, [user])
+
+  useEffect(() => {
+    const checkUserProfile = async () => {
+      if (user?.id) {
+        try {
+          const hasProfile = await checkIfProfileExists(user.id)
+          setShowPreferences(!hasProfile) 
+          setLoading(false)
+        } catch (error) {
+          console.error('Error checking profile:', error)
+          setLoading(false)
+        }
+      }
+    }
+
+    if (user) {
+      checkUserProfile()
+    }
+  }, [user])
 
   useEffect(() => {
     (async () => {
@@ -56,7 +86,31 @@ export default function DashboardScreen() {
     })();
   }, []);
 
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+      router.replace('/(auth)/signin')
+    } catch (error: any) {
+      Alert.alert('Error', error.message)
+    }
+  }
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#ff8c00" />
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    )
+  }
+
+  // If the user needs to complete preferences, show the form
+  console.log("showPreferences", showPreferences);
+  
+  if (showPreferences) {
+    return <CustomerPreferencesForm />
+  }
 
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
@@ -77,24 +131,38 @@ export default function DashboardScreen() {
               <Text style={styles.badgeText}>2</Text>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.profileIcon}>
+          <TouchableOpacity onPress={handleSignOut} style={styles.profileIcon}>
             <View style={styles.profileCircle}>
-              <Text style={styles.profileInitial}>U</Text>
+              <Text style={styles.profileInitial}>{user?.email?.charAt(0).toUpperCase() || "U"}</Text>
             </View>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Search Bar */}
+      {/* Enhanced Search Bar */}
       <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Feather name="search" size={20} color="#333" style={styles.searchIcon} />
+        <LinearGradient
+          colors={['#FF9A5A', '#FF5200']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.searchBar}
+        >
+          <Feather name="search" size={22} color="#fff" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search DoorDash"
-            placeholderTextColor="#888"
+            placeholder="Search for food, groceries, etc."
+            placeholderTextColor="rgba(255,255,255,0.8)"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
           />
-        </View>
+          {searchQuery ? (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Feather name="x" size={20} color="#fff" />
+            </TouchableOpacity>
+          ) : (
+            <MaterialCommunityIcons name="microphone-outline" size={22} color="#fff" />
+          )}
+        </LinearGradient>
         <TouchableOpacity style={styles.nowButton}>
           <MaterialIcons name="schedule" size={20} color="#333" />
           <Text style={styles.nowText}>Now</Text>
@@ -103,43 +171,66 @@ export default function DashboardScreen() {
       </View>
 
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {/* Featured Promos - Replacing service buttons */}
-        <View style={styles.featuredContainer}>
-          <PromoButton icon="utensils" name="$0 Delivery Fee" />
-          <PromoButton icon="percent" name="Daily Deals" />
-          <PromoButton icon="bolt" name="Express" />
-        </View>
-
         {/* Map Placeholder - 70% of screen height */}
-        <View style={[styles.mapPlaceholder, { height: height * 0.7 * 0.7 }]}>
+        <View style={[styles.mapPlaceholder, { height: height * 0.7 * 0.5 }]}>
           <MapView
             style={styles.map}
             provider="google" // Force Google Maps on Android
             initialRegion={{
               latitude: location?.coords.latitude || 19.123,
               longitude: location?.coords.longitude || 72.834,
-              latitudeDelta: 0,
-              longitudeDelta: 0,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
             }}
           >
             <Marker
               coordinate={{ latitude: location?.coords.latitude || 37.78825, longitude: location?.coords.longitude || -122.4324 }}
-              title={"My Marker"}
-              description={"This is a marker example"}
+              title={"My Location"}
+              description={"You are here"}
             />
           </MapView>
         </View>
 
-        {/* Food Categories - Moved below map */}
-        <Text style={styles.categoriesTitle}>Popular Categories</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesContainer}>
-          <FoodCategory icon="🍕" name="Pizza" price="$3.25" />
-          <FoodCategory icon="🌯" name="Burrito" price="$4.15" />
-          <FoodCategory icon="🥗" name="Bowls" price="$2.75" />
-          <FoodCategory icon="🥐" name="Bakery" price="$3.27" />
-          <FoodCategory icon="🍗" name="Chicken" price="$2.99" />
-          <FoodCategory icon="🍔" name="Burgers" price="$3.50" />
-          <FoodCategory icon="🍦" name="Dessert" price="$4.00" />
+        {/* Featured Promos - Below the map */}
+        <View style={styles.featuredContainer}>
+          <PromoButton icon="utensils" name="$0 Delivery Fee" />
+          <PromoButton icon="percent" name="Daily Deals" />
+          <PromoButton icon="bolt" name="Express" />
+        </View>
+
+        {/* Popular Stalls */}
+        <Text style={styles.categoriesTitle}>Popular Stalls</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.stallsContainer}>
+          <StallCard 
+            name="Foodie Heaven" 
+            image="https://via.placeholder.com/150/ffffff/000000?text=FH" 
+            rating={4.7} 
+            hygiene={5} 
+          />
+          <StallCard 
+            name="Spice Corner" 
+            image="https://via.placeholder.com/150/ffffff/000000?text=SC" 
+            rating={4.5} 
+            hygiene={4} 
+          />
+          <StallCard 
+            name="Fresh & Tasty" 
+            image="https://via.placeholder.com/150/ffffff/000000?text=FT" 
+            rating={4.8} 
+            hygiene={5} 
+          />
+          <StallCard 
+            name="Quick Bites" 
+            image="https://via.placeholder.com/150/ffffff/000000?text=QB" 
+            rating={4.3} 
+            hygiene={4} 
+          />
+          <StallCard 
+            name="Street Delights" 
+            image="https://via.placeholder.com/150/ffffff/000000?text=SD" 
+            rating={4.6} 
+            hygiene={4} 
+          />
         </ScrollView>
 
         {/* Curved Orange Container */}
@@ -185,50 +276,53 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Bottom Navigation - Just a placeholder to match the image */}
+        {/* Bottom placeholder for spacing */}
         <View style={styles.bottomPlaceholder} />
       </ScrollView>
-
-      {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem}>
-          <MaterialIcons name="home" size={24} color="#ff8c00" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <MaterialIcons name="search" size={24} color="#888" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <MaterialIcons name="receipt" size={24} color="#888" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <MaterialIcons name="shopping-cart" size={24} color="#888" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <MaterialIcons name="person" size={24} color="#888" />
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   )
 }
 
-// Helper component for food categories
-interface FoodCategoryProps {
-  icon: string;
+// Helper component for Stall Cards
+interface StallCardProps {
   name: string;
-  price: string;
+  image: string;
+  rating: number;
+  hygiene: number;
 }
 
-const FoodCategory = ({ icon, name, price }: FoodCategoryProps) => (
-  <View style={styles.categoryItem}>
-    <View style={styles.categoryIconContainer}>
-      <Text style={styles.categoryIcon}>{icon}</Text>
+const StallCard = ({ name, image, rating, hygiene }: StallCardProps) => (
+  <View style={styles.stallCard}>
+    <Image source={{ uri: image }} style={styles.stallImage} />
+    <View style={styles.stallInfo}>
+      <Text style={styles.stallName}>{name}</Text>
+      <View style={styles.ratingContainer}>
+        <View style={styles.ratingItem}>
+          <MaterialIcons name="star" size={16} color="#FFD700" />
+          <Text style={styles.ratingText}>{rating}</Text>
+          <Text style={styles.ratingLabel}>Popularity</Text>
+        </View>
+        <View style={styles.ratingItem}>
+          <MaterialCommunityIcons name="silverware-clean" size={16} color="#4CAF50" />
+          <View style={styles.hygieneStars}>
+            {Array(5).fill(0).map((_, i) => (
+              <MaterialIcons 
+                key={i}
+                name="star" 
+                size={12} 
+                color={i < hygiene ? "#4CAF50" : "#e0e0e0"} 
+                style={{ marginRight: 2 }}
+              />
+            ))}
+          </View>
+          <Text style={styles.ratingLabel}>Hygiene</Text>
+        </View>
+      </View>
     </View>
-    <Text style={styles.categoryName}>{name}</Text>
-    <Text style={styles.categoryPrice}>{price}</Text>
   </View>
 )
 
-// Helper component for promo buttons (replacing service buttons)
+// Helper component for promo buttons
 interface PromoButtonProps {
   icon: string;
   name: string;
@@ -245,6 +339,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000000',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#ff8c00',
   },
   headerBar: {
     flexDirection: 'row',
@@ -321,24 +426,24 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f1f1f1',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    height: 40,
+    borderRadius: 24,
+    paddingHorizontal: 15,
+    height: 50,
     marginRight: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowColor: '#FF5200',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: '#fff',
+    height: '100%',
   },
   nowButton: {
     flexDirection: 'row',
@@ -346,7 +451,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f1f1f1',
     borderRadius: 20,
     paddingHorizontal: 10,
-    height: 40,
+    height: 50,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -361,12 +466,32 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
   },
+  mapPlaceholder: {
+    backgroundColor: '#e0e0e0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 16,
+    borderRadius: 16,
+    margin: 16,
+    overflow: 'hidden',
+  },
+  map: {
+    width: '100%',
+    height: '100%',
+  },
   featuredContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    marginHorizontal: 16,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    marginTop: 16,
   },
   promoButton: {
     alignItems: 'center',
@@ -379,7 +504,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
   },
   promoName: {
     marginTop: 8,
@@ -387,78 +512,62 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
-  mapPlaceholder: {
-    backgroundColor: '#e0e0e0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 16,
-    borderRadius: 16,
-    margin: 16,
-    overflow: 'hidden',
-  },
-  mapText: {
-    fontSize: 16,
-    color: '#666',
-    marginVertical: 10,
-  },
-  map: {
-    width: '100%',
-    height: '100%',
-  },
-  mapButton: {
-    backgroundColor: '#ff4500',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    marginTop: 16,
-  },
-  mapButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
   categoriesTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     marginLeft: 16,
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: 24,
+    marginBottom: 16,
   },
-  categoriesContainer: {
-    paddingVertical: 16,
+  stallsContainer: {
     paddingHorizontal: 8,
+    paddingBottom: 24,
   },
-  categoryItem: {
-    alignItems: 'center',
-    marginHorizontal: 10,
-    width: 70,
-  },
-  categoryIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#ffebcd',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-    shadowColor: '#ff8c00',
+  stallCard: {
+    width: 240,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginHorizontal: 8,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  categoryIcon: {
-    fontSize: 24,
+  stallImage: {
+    width: '100%',
+    height: 120,
+    resizeMode: 'cover',
   },
-  categoryName: {
+  stallInfo: {
+    padding: 12,
+  },
+  stallName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  ratingItem: {
+    alignItems: 'center',
+  },
+  ratingText: {
     fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: 'bold',
+    marginLeft: 4,
   },
-  categoryPrice: {
-    fontSize: 14,
-    color: '#ff4500',
-    textAlign: 'center',
-    fontWeight: '500',
+  ratingLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+  },
+  hygieneStars: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   curvedContainer: {
     backgroundColor: '#FF5200',
@@ -466,8 +575,10 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 30,
     paddingTop: 30,
     paddingHorizontal: 16,
-    paddingBottom: 60, // Extra padding for bottom nav
+    paddingBottom: 30,
     marginTop: 16,
+    flex: 1,
+    minHeight: 300,
   },
   groceryBanner: {
     backgroundColor: '#ffebcd',
@@ -514,7 +625,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16,
-    color: '#222',
+    color: '#fff',
   },
   storeListItem: {
     flexDirection: 'row',
@@ -544,30 +655,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bottomPlaceholder: {
-    height: 60,
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    height: 60,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 8,
-  },
-  navItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    height: '100%',
+    height: 80,
   },
 })

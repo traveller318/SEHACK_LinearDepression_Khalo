@@ -1,10 +1,10 @@
 import { StyleSheet, Text, View, TouchableOpacity, Alert, ActivityIndicator } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'expo-router'
-import { useAuth } from '../../contexts/AuthContext'
-import { supabase } from '../../lib/supabase'
-import CustomerPreferencesForm from '../components/CustomerPreferencesForm'
-import { checkIfProfileExists } from '../../lib/customerProfileHelpers'
+import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
+import CustomerPreferencesForm from './components/CustomerPreferencesForm'
+import { checkIfProfileExists } from '../lib/customerProfileHelpers'
 
 export default function HomeScreen() {
   const { user } = useAuth()
@@ -65,30 +65,6 @@ export default function HomeScreen() {
   else{
     router.replace('/(tabsCustomer)/dashboard')
   }
-
-  // Otherwise show the main home screen
-  // return (
-  //   <View style={styles.container}>
-  //     <View style={styles.header}>
-  //       <Text style={styles.title}>Welcome</Text>
-  //       <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
-  //         <Text style={styles.signOutText}>Sign Out</Text>
-  //       </TouchableOpacity>
-  //     </View>
-
-  //     <View style={styles.userInfo}>
-  //       <Text style={styles.label}>Email:</Text>
-  //       <Text style={styles.value}>{user?.email}</Text>
-
-  //       <Text style={styles.label}>Name:</Text>
-  //       <Text style={styles.value}>{user?.user_metadata?.full_name || 'Not set'}</Text>
-  //       <Text style={styles.label}>User Type:</Text>
-  //       <Text style={styles.value}>{user?.user_metadata?.user_type || 'Not set'}</Text>
-  //       <Text style={styles.label}>User ID:</Text>
-  //       <Text style={styles.value}>{user?.id}</Text>
-  //     </View>
-  //   </View>
-  // )
 }
 
 const styles = StyleSheet.create({
