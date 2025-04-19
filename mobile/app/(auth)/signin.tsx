@@ -52,7 +52,7 @@ const SignInScreen = () => {
         }
       }
       if (userType === 'vendor') {
-        router.replace('/(tabsVendor)/main')
+        router.replace('/(tabsVendor)/dashboard')
       } else if (userType === 'customer') {
         router.replace('/(tabsCustomer)/dashboard')
       } 
