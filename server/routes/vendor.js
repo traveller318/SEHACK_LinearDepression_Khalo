@@ -57,24 +57,29 @@ router.post('/createVendorProfile', async (req, res) => {
 
 router.post('/createStall', async (req, res) => {
   try {
-    const { vendor_id, name, location, lat, lng, cuisine, hygiene_score } =
-      req.body
+    const { vendor_id, name, lat, lng, cuisine, hygiene_score } = req.body
+
+    // Construct the location using PostGIS functions (ST_SetSRID and ST_MakePoint)
+    // const location = `ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)` // Make sure to use a valid SQL function here
+
+    // Insert into the stalls table
     const { data, error } = await supabase
       .from('stalls')
       .insert({
         vendor_id,
         name,
-        location,
-        lat,
-        lng,
+        location: `POINT(${lng} ${lat})`, // Insert the geospatial location as a valid SQL statement
         cuisine,
         hygiene_score,
       })
       .select()
+
     if (error) throw error
+
     console.log(data)
     res.status(200).json(data)
   } catch (error) {
+    console.error(error)
     res.status(400).json({ error: error.message })
   }
 })
@@ -138,4 +143,26 @@ router.post('/createOrder', async (req, res) => {
   }
 })
 
+router.post('/createMenuItem', async (req, res) => {
+  try {
+    const { stall_id, name, description, price, category, image_url, traits } =
+      req.body
+    const { data, error } = await supabase
+      .from('menu_items')
+      .insert({
+        stall_id,
+        name,
+        description,
+        price,
+        category,
+        image_url,
+        traits,
+      })
+      .select()
+    if (error) throw error
+    res.status(200).json(data)
+  } catch (error) {
+    res.status(400).json({ error: error.message })
+  }
+})
 export default router

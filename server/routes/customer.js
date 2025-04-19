@@ -106,33 +106,12 @@ router.post('/createVisit', async (req, res) => {
 //     updated_at TIMESTAMP DEFAULT now()
 // );
 
-router.post('/createMenuItem', async (req, res) => {
-  try {
-    const { stall_id, name, description, price, category, image_url, traits } =
-      req.body
-    const { data, error } = await supabase
-      .from('menu_items')
-      .insert({
-        stall_id,
-        name,
-        description,
-        price,
-        category,
-        image_url,
-        traits,
-      })
-      .select()
-    if (error) throw error
-    res.status(200).json(data)
-  } catch (error) {
-    res.status(400).json({ error: error.message })
-  }
-})
-
 //get all reviews for a stall
 router.get('/getReviews/:stall_id', async (req, res) => {
   try {
     const { stall_id } = req.params
+    console.log('testing ')
+
     const { data, error } = await supabase
       .from('reviews')
       .select('rating, review_text')
@@ -142,6 +121,39 @@ router.get('/getReviews/:stall_id', async (req, res) => {
     res.status(200).json(data)
   } catch (error) {
     res.status(400).json({ error: error.message })
+  }
+})
+
+router.post('/getNearbyStalls', async (req, res) => {
+  try {
+    const { lat, lng, radius } = req.body // lat, lng, and radius should be sent in the request body
+
+    // Validate that lat, lng, and radius are provided
+    if (!lat || !lng || !radius) {
+      return res
+        .status(400)
+        .json({ error: 'Latitude, longitude, and radius are required.' })
+    }
+
+    // SQL query to get nearby stalls within the radius (radius in meters)
+    const { data, error } = await supabase.rpc('get_nearby_stalls', {
+      lat: lat,
+      lng: lng,
+      radius: radius,
+    })
+
+    // If there is an error in the RPC function call
+    if (error) {
+      return res.status(400).json({ error: error.message })
+    }
+
+    // Respond with the fetched data (nearby stalls)
+    res.status(200).json(data)
+  } catch (error) {
+    console.error(error) // Log the error for debugging
+    res
+      .status(500)
+      .json({ error: 'Something went wrong. Please try again later.' })
   }
 })
 
