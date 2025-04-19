@@ -24,6 +24,8 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true)
   const [filterModalVisible, setFilterModalVisible] = useState(false)
   const [selectedTags, setSelectedTags] = useState<string[]>(['Bestseller'])
+  const [loadingStalls, setLoadingStalls] = useState(true);
+  const [nearbyStalls, setNearbyStalls] = useState<any[]>([]); // Add this line
 
   useEffect(() => {
     if (user && user.user_metadata?.user_type !== 'customer') {
@@ -36,7 +38,7 @@ export default function DashboardScreen() {
       if (user?.id) {
         try {
           const hasProfile = await checkIfProfileExists(user.id)
-          setShowPreferences(!hasProfile) 
+          setShowPreferences(!hasProfile)
           setLoading(false)
         } catch (error) {
           console.error('Error checking profile:', error)
@@ -64,7 +66,7 @@ export default function DashboardScreen() {
         let currentLocation = await Location.getCurrentPositionAsync({});
         setLocation(currentLocation);
         console.log('Current Location:', currentLocation);
-        
+
         // Optionally, reverse geocode to get a human-readable address
         let addressResponse = await Location.reverseGeocodeAsync({
           latitude: currentLocation.coords.latitude,
@@ -85,6 +87,9 @@ export default function DashboardScreen() {
         console.error('Error fetching location:', error);
         setAddress('Error fetching location');
       }
+
+      fetchNearbyStalls();
+
     })();
   }, []);
 
@@ -122,10 +127,57 @@ export default function DashboardScreen() {
 
   // If the user needs to complete preferences, show the form
   console.log("showPreferences", showPreferences);
-  
+
   if (showPreferences) {
     return <CustomerPreferencesForm />
   }
+
+
+  const fetchNearbyStalls = async () => {
+    if (!location?.coords?.latitude || !location?.coords?.longitude) {
+      console.error('Location coordinates are missing');
+      setLoadingStalls(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('https://khalo-r5v5.onrender.com/customer/getNearbyStalls', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          lat: location.coords.latitude,
+          lng: location.coords.longitude,
+          radius: 4000,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch nearby stalls');
+      }
+      // console.log("response", response);
+
+      const data = await response.json();
+      setNearbyStalls(data);
+    } catch (error: any) {
+      console.error('Error fetching nearby stalls:', error.message);
+      Alert.alert('Error', error.message || 'Failed to fetch nearby stalls');
+    } finally {
+      setLoadingStalls(false);
+    }
+  };
+
+  const icons = {
+    chinese: require('./icons/noodles.png'),
+    north_indian: require('./icons/turban.png'),
+    italian: require('./icons/pizza.png'),
+  };
+
+
+  // console.log("nearbyStalls", nearbyStalls);
+
 
   return (
     <>
@@ -206,86 +258,115 @@ export default function DashboardScreen() {
               showsCompass
             >
               <Marker
-                coordinate={{ latitude: location?.coords.latitude || 37.78825, longitude: location?.coords.longitude || -122.4324 }}
+                coordinate={{ latitude: location?.coords.latitude || 19.1196, longitude: location?.coords.longitude || 72.8367 }}
                 title={"My Location"}
                 description={"You are here"}
                 pinColor="#FF5200"
+              // image={require('./icons/pizza.png')}
               />
+              {nearbyStalls.map((stall, index) => {
+                let markerImage; // Declare markerImage
+                if (stall.cuisine === "Chinese") {
+                  markerImage = icons.chinese;
+                }
+                if (stall.cuisine === "Italian") {
+                  markerImage = icons.north_indian;
+                }
+                if (stall.cuisine === "North Indian") {
+                  markerImage = icons.north_indian;
+                }
+
+                return (
+                  <Marker
+                    key={index}
+                    coordinate={{ latitude: stall.lat, longitude: stall.lng }}
+                    title={stall.name}
+                    description={stall.cuisine}
+                  >
+                    {/* Custom Marker with Styled Image */}
+                    <Image
+                      source={markerImage}
+                      style={{ width: 30, height: 30 }} // Adjust size as needed
+                      resizeMode="contain" // Ensure proper scaling
+                    />
+                  </Marker>
+                );
+              })}
             </MapView>
           </View>
 
           {/* Nearby Stalls - Below the map */}
           <Text style={styles.categoriesTitle}>Nearby Stalls</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.stallsContainer}>
-            <StallCard 
-              name="Street Corner" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=SC" 
-              rating={4.2} 
+            <StallCard
+              name="Street Corner"
+              image="https://via.placeholder.com/150/ffffff/000000?text=SC"
+              rating={4.2}
               hygiene={4}
-              distance="0.3 km" 
+              distance="0.3 km"
             />
-            <StallCard 
-              name="Local Delights" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=LD" 
-              rating={4.4} 
+            <StallCard
+              name="Local Delights"
+              image="https://via.placeholder.com/150/ffffff/000000?text=LD"
+              rating={4.4}
               hygiene={4}
-              distance="0.5 km" 
+              distance="0.5 km"
             />
-            <StallCard 
-              name="Metro Eats" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=ME" 
-              rating={4.1} 
+            <StallCard
+              name="Metro Eats"
+              image="https://via.placeholder.com/150/ffffff/000000?text=ME"
+              rating={4.1}
               hygiene={3}
-              distance="0.8 km" 
+              distance="0.8 km"
             />
-            <StallCard 
-              name="Urban Bites" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=UB" 
-              rating={4.6} 
+            <StallCard
+              name="Urban Bites"
+              image="https://via.placeholder.com/150/ffffff/000000?text=UB"
+              rating={4.6}
               hygiene={5}
-              distance="1.2 km" 
+              distance="1.2 km"
             />
-            <StallCard 
-              name="City Flavors" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=CF" 
-              rating={4.3} 
+            <StallCard
+              name="City Flavors"
+              image="https://via.placeholder.com/150/ffffff/000000?text=CF"
+              rating={4.3}
               hygiene={4}
-              distance="1.5 km" 
+              distance="1.5 km"
             />
           </ScrollView>
 
           {/* Popular Stalls */}
           <Text style={styles.categoriesTitle}>Popular Stalls</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.stallsContainer}>
-            <StallCard 
-              name="Foodie Heaven" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=FH" 
-              rating={4.7} 
-              hygiene={5} 
+            <StallCard
+              name="Foodie Heaven"
+              image="https://via.placeholder.com/150/ffffff/000000?text=FH"
+              rating={4.7}
+              hygiene={5}
             />
-            <StallCard 
-              name="Spice Corner" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=SC" 
-              rating={4.5} 
-              hygiene={4} 
+            <StallCard
+              name="Spice Corner"
+              image="https://via.placeholder.com/150/ffffff/000000?text=SC"
+              rating={4.5}
+              hygiene={4}
             />
-            <StallCard 
-              name="Fresh & Tasty" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=FT" 
-              rating={4.8} 
-              hygiene={5} 
+            <StallCard
+              name="Fresh & Tasty"
+              image="https://via.placeholder.com/150/ffffff/000000?text=FT"
+              rating={4.8}
+              hygiene={5}
             />
-            <StallCard 
-              name="Quick Bites" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=QB" 
-              rating={4.3} 
-              hygiene={4} 
+            <StallCard
+              name="Quick Bites"
+              image="https://via.placeholder.com/150/ffffff/000000?text=QB"
+              rating={4.3}
+              hygiene={4}
             />
-            <StallCard 
-              name="Street Delights" 
-              image="https://via.placeholder.com/150/ffffff/000000?text=SD" 
-              rating={4.6} 
-              hygiene={4} 
+            <StallCard
+              name="Street Delights"
+              image="https://via.placeholder.com/150/ffffff/000000?text=SD"
+              rating={4.6}
+              hygiene={4}
             />
           </ScrollView>
 
@@ -300,7 +381,7 @@ export default function DashboardScreen() {
             <Text style={styles.sectionTitle}>All Stalls</Text>
 
             <View style={styles.allStallsContainer}>
-              <VerticalStallCard 
+              <VerticalStallCard
                 name="Suraj Lama Momos"
                 image="https://via.placeholder.com/150/ffffff/000000?text=SL"
                 cuisine="Tibetan, Chinese"
@@ -310,8 +391,8 @@ export default function DashboardScreen() {
                 hygieneScore={4}
                 verified={true}
               />
-              <VerticalStallCard 
-                name="Street Corner" 
+              <VerticalStallCard
+                name="Street Corner"
                 cuisine="Indian"
                 distance="0.3 km"
                 deliveryTime="15-20 mins"
@@ -319,8 +400,8 @@ export default function DashboardScreen() {
                 hygieneScore={4}
                 verified={true}
               />
-              <VerticalStallCard 
-                name="Local Delights" 
+              <VerticalStallCard
+                name="Local Delights"
                 cuisine="Chinese"
                 distance="0.5 km"
                 deliveryTime="20-25 mins"
@@ -328,8 +409,8 @@ export default function DashboardScreen() {
                 hygieneScore={3}
                 verified={false}
               />
-              <VerticalStallCard 
-                name="Metro Eats" 
+              <VerticalStallCard
+                name="Metro Eats"
                 cuisine="Fast Food"
                 distance="0.8 km"
                 deliveryTime="25-30 mins"
@@ -337,8 +418,8 @@ export default function DashboardScreen() {
                 hygieneScore={5}
                 verified={true}
               />
-              <VerticalStallCard 
-                name="Urban Bites" 
+              <VerticalStallCard
+                name="Urban Bites"
                 cuisine="Italian"
                 distance="1.2 km"
                 deliveryTime="30-35 mins"
@@ -346,8 +427,8 @@ export default function DashboardScreen() {
                 hygieneScore={4}
                 verified={true}
               />
-              <VerticalStallCard 
-                name="City Flavors" 
+              <VerticalStallCard
+                name="City Flavors"
                 cuisine="Mexican"
                 distance="1.5 km"
                 deliveryTime="35-40 mins"
@@ -355,8 +436,8 @@ export default function DashboardScreen() {
                 hygieneScore={3}
                 verified={false}
               />
-              <VerticalStallCard 
-                name="Foodie Heaven" 
+              <VerticalStallCard
+                name="Foodie Heaven"
                 cuisine="Thai"
                 distance="1.7 km"
                 deliveryTime="30-35 mins"
@@ -364,8 +445,8 @@ export default function DashboardScreen() {
                 hygieneScore={5}
                 verified={true}
               />
-              <VerticalStallCard 
-                name="Spice Corner" 
+              <VerticalStallCard
+                name="Spice Corner"
                 cuisine="Indian"
                 distance="1.9 km"
                 deliveryTime="25-30 mins"
@@ -388,9 +469,9 @@ export default function DashboardScreen() {
         visible={filterModalVisible}
         onRequestClose={toggleFilterModal}
       >
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1} 
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
           onPress={toggleFilterModal}
         >
           <View style={styles.modalContainer}>
@@ -400,8 +481,8 @@ export default function DashboardScreen() {
                 <MaterialIcons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
-            
-            <ScrollView 
+
+            <ScrollView
               style={styles.modalContent}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.modalContentContainer}
@@ -420,11 +501,11 @@ export default function DashboardScreen() {
                   </TouchableOpacity>
                   <TouchableOpacity style={[styles.sortOption, styles.sortOptionWithIcon, styles.sortOptionActive]}>
                     <MaterialIcons name="star" size={18} color="#FF5200" />
-                    <Text style={[styles.sortOptionText, {color: '#FF5200'}]}>Rating - high to low</Text>
+                    <Text style={[styles.sortOptionText, { color: '#FF5200' }]}>Rating - high to low</Text>
                   </TouchableOpacity>
                 </View>
               </View>
-              
+
               {/* Pure veg toggle */}
               <View style={styles.filterSection}>
                 <View style={styles.pureVegRow}>
@@ -432,7 +513,7 @@ export default function DashboardScreen() {
                   <Text style={styles.sectionHeader}>Pure vegetarian options only</Text>
                 </View>
               </View>
-              
+
               {/* Top picks */}
               <View style={styles.filterSection}>
                 <Text style={styles.sectionHeader}>Top picks</Text>
@@ -451,7 +532,7 @@ export default function DashboardScreen() {
                   </TouchableOpacity>
                 </View>
               </View>
-              
+
               {/* Dietary preference */}
               <View style={styles.filterSection}>
                 <Text style={styles.sectionHeader}>Dietary preference</Text>
@@ -470,7 +551,7 @@ export default function DashboardScreen() {
                   </TouchableOpacity>
                 </View>
               </View>
-              
+
               {/* Offers */}
               <View style={styles.filterSection}>
                 <Text style={styles.sectionHeader}>Offers</Text>
@@ -485,7 +566,7 @@ export default function DashboardScreen() {
                   </TouchableOpacity>
                 </View>
               </View>
-              
+
               {/* Distance */}
               <View style={styles.filterSection}>
                 <Text style={styles.sectionHeader}>Distance</Text>
@@ -505,7 +586,7 @@ export default function DashboardScreen() {
                 </View>
               </View>
             </ScrollView>
-            
+
             <View style={styles.modalFooter}>
               <TouchableOpacity style={styles.clearButton} onPress={toggleFilterModal}>
                 <Text style={styles.clearButtonText}>Clear All</Text>
@@ -557,11 +638,11 @@ const StallCard = ({ name, image, rating, hygiene, distance }: StallCardProps) =
           <MaterialCommunityIcons name="silverware-clean" size={16} color="#4CAF50" />
           <View style={styles.hygieneStars}>
             {Array(5).fill(0).map((_, i) => (
-              <MaterialIcons 
+              <MaterialIcons
                 key={i}
-                name="star" 
-                size={12} 
-                color={i < hygiene ? "#4CAF50" : "#e0e0e0"} 
+                name="star"
+                size={12}
+                color={i < hygiene ? "#4CAF50" : "#e0e0e0"}
                 style={{ marginRight: 2 }}
               />
             ))}
@@ -601,8 +682,8 @@ interface FilterTagProps {
 }
 
 const FilterTag = ({ icon, name, active = false, onPress }: FilterTagProps) => (
-  <TouchableOpacity 
-    style={[styles.filterTag, active && styles.filterTagActive]} 
+  <TouchableOpacity
+    style={[styles.filterTag, active && styles.filterTagActive]}
     onPress={onPress}
   >
     <View style={styles.filterTagIcon}>{icon}</View>
@@ -622,22 +703,22 @@ interface VerticalStallCardProps {
   verified?: boolean;
 }
 
-const VerticalStallCard = ({ 
-  name, 
-  image, 
-  cuisine, 
-  distance, 
-  deliveryTime, 
-  rating, 
-  hygieneScore, 
-  verified = false 
+const VerticalStallCard = ({
+  name,
+  image,
+  cuisine,
+  distance,
+  deliveryTime,
+  rating,
+  hygieneScore,
+  verified = false
 }: VerticalStallCardProps) => (
   <View style={styles.verticalStallCard}>
     <View style={styles.verticalStallContent}>
       <View style={styles.verticalStallImageContainer}>
-        <Image 
-          source={{ uri: image || `https://via.placeholder.com/150/ffffff/000000?text=${name.split(' ').map(s => s[0]).join('')}` }} 
-          style={styles.verticalStallImage} 
+        <Image
+          source={{ uri: image || `https://via.placeholder.com/150/ffffff/000000?text=${name.split(' ').map(s => s[0]).join('')}` }}
+          style={styles.verticalStallImage}
         />
       </View>
       <View style={styles.verticalStallInfo}>
@@ -669,11 +750,11 @@ const VerticalStallCard = ({
             <MaterialCommunityIcons name="silverware-clean" size={16} color="#4CAF50" />
             <View style={styles.hygieneStars}>
               {Array(5).fill(0).map((_, i) => (
-                <MaterialIcons 
+                <MaterialIcons
                   key={i}
-                  name="star" 
-                  size={12} 
-                  color={i < hygieneScore ? "#4CAF50" : "#e0e0e0"} 
+                  name="star"
+                  size={12}
+                  color={i < hygieneScore ? "#4CAF50" : "#e0e0e0"}
                   style={{ marginRight: 2 }}
                 />
               ))}
