@@ -124,7 +124,7 @@ export default function CustomerPreferencesForm() {
       console.log("profileData", profileData);
     
       // Call API to create customer profile
-      const response = await fetch('http://10.10.112.73:3000/customer/createCustomerProfile', {
+      const response = await fetch('https://khalo-r5v5.onrender.com/customer/createCustomerProfile', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

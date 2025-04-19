@@ -424,6 +424,7 @@ export default function DashboardScreen() {
                 rating={stall.rating}
                 hygiene={stall.hygiene_score}
                 distance={stall.distance}
+                id={stall.id}
               />
             ))}
           </ScrollView>
@@ -706,6 +707,7 @@ interface StallCardProps {
   rating: number
   hygiene: number
   distance?: string
+  id?: string
 }
 
 const StallCard = ({
@@ -714,53 +716,62 @@ const StallCard = ({
   rating,
   hygiene,
   distance,
-}: StallCardProps) => (
-  <View style={styles.stallCard}>
-    <Image source={{ uri: image }} style={styles.stallImage} />
-    <View style={styles.stallOverlay}>
-      <View style={styles.stallBadge}>
-        <Text style={styles.stallBadgeText}>Popular</Text>
-      </View>
-    </View>
-    <View style={styles.stallInfo}>
-      <Text style={styles.stallName}>{name}</Text>
-      <View style={styles.ratingContainer}>
-        <View style={styles.ratingItem}>
-          <MaterialIcons name="star" size={16} color="#FFD700" />
-          <Text style={styles.ratingText}>{rating}</Text>
-          <Text style={styles.ratingLabel}>Popularity</Text>
+  id = '1',
+}: StallCardProps) => {
+  const router = useRouter()
+  
+  const handlePress = () => {
+    router.push(`/stalls/${id}`)
+  }
+  
+  return (
+    <TouchableOpacity style={styles.stallCard} onPress={handlePress}>
+      <Image source={{ uri: image }} style={styles.stallImage} />
+      <View style={styles.stallOverlay}>
+        <View style={styles.stallBadge}>
+          <Text style={styles.stallBadgeText}>Popular</Text>
         </View>
-        <View style={styles.ratingItem}>
-          <MaterialCommunityIcons
-            name="silverware-clean"
-            size={16}
-            color="#4CAF50"
-          />
-          <View style={styles.hygieneStars}>
-            {Array(5)
-              .fill(0)
-              .map((_, i) => (
-                <MaterialIcons
-                  key={i}
-                  name="star"
-                  size={12}
-                  color={i < hygiene ? '#4CAF50' : '#e0e0e0'}
-                  style={{ marginRight: 2 }}
-                />
-              ))}
+      </View>
+      <View style={styles.stallInfo}>
+        <Text style={styles.stallName}>{name}</Text>
+        <View style={styles.ratingContainer}>
+          <View style={styles.ratingItem}>
+            <MaterialIcons name="star" size={16} color="#FFD700" />
+            <Text style={styles.ratingText}>{rating}</Text>
+            <Text style={styles.ratingLabel}>Popularity</Text>
           </View>
-          <Text style={styles.ratingLabel}>Hygiene</Text>
+          <View style={styles.ratingItem}>
+            <MaterialCommunityIcons
+              name="silverware-clean"
+              size={16}
+              color="#4CAF50"
+            />
+            <View style={styles.hygieneStars}>
+              {Array(5)
+                .fill(0)
+                .map((_, i) => (
+                  <MaterialIcons
+                    key={i}
+                    name="star"
+                    size={12}
+                    color={i < hygiene ? '#4CAF50' : '#e0e0e0'}
+                    style={{ marginRight: 2 }}
+                  />
+                ))}
+            </View>
+            <Text style={styles.ratingLabel}>Hygiene</Text>
+          </View>
         </View>
+        {distance && (
+          <View style={styles.distanceContainer}>
+            <MaterialIcons name="place" size={14} color="#666" />
+            <Text style={styles.distanceText}>{distance}</Text>
+          </View>
+        )}
       </View>
-      {distance && (
-        <View style={styles.distanceContainer}>
-          <MaterialIcons name="place" size={14} color="#666" />
-          <Text style={styles.distanceText}>{distance}</Text>
-        </View>
-      )}
-    </View>
-  </View>
-)
+    </TouchableOpacity>
+  )
+}
 
 // Helper component for promo buttons
 interface PromoButtonProps {
@@ -795,14 +806,15 @@ const FilterTag = ({ icon, name, active = false, onPress }: FilterTagProps) => (
 
 // New Vertical Stall Card Component
 interface VerticalStallCardProps {
-  name: string
-  image?: string
-  cuisine: string
-  distance: string
-  deliveryTime: string
-  rating: number
-  hygieneScore: number
-  verified?: boolean
+  name: string;
+  image_url?: string;
+  cuisine: string;
+  distance: string;
+  deliveryTime: string;
+  rating: number;
+  hygieneScore: number;
+  verified?: boolean;
+  _id?: string; // Added id prop
 }
 
 const VerticalStallCard = ({
@@ -814,8 +826,16 @@ const VerticalStallCard = ({
   rating,
   hygiene_score,
   verified = false,
-}: VerticalStallCardProps) => (
-  <View style={styles.verticalStallCard}>
+  _id = '1', // Default id if none provided
+}: VerticalStallCardProps) => {
+  const router = useRouter()
+  
+  const handlePress = () => {
+    router.push(`/stalls/${_id}`)
+  }
+  
+  return (
+  <TouchableOpacity style={styles.verticalStallCard} onPress={handlePress}>
     <View style={styles.verticalStallContent}>
       <View style={styles.verticalStallImageContainer}>
         <Image
@@ -884,8 +904,9 @@ const VerticalStallCard = ({
       color="#999"
       style={styles.verticalStallArrow}
     />
-  </View>
-)
+  </TouchableOpacity>
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
