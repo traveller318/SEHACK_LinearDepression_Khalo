@@ -79,50 +79,61 @@ router.post('/getNearbyPosts', async (req, res) => {
 //upvote a post without rpc
 router.post('/upvotePost', async (req, res) => {
   try {
-    const { post_id, user_id } = req.body
-    //get the post
+    const { post_id } = req.body
+
     const { data, error } = await supabase
       .from('posts')
       .select()
       .eq('id', post_id)
       .single()
+
     if (error) throw error
 
-    const { upvotes, downvotes } = data
+    const { upvotes } = data
 
-    //update the post
     const { data: updatedPost, error: updateError } = await supabase
       .from('posts')
       .update({
         upvotes: upvotes + 1,
       })
+      .eq('id', post_id) // ✅ This line fixes the issue
       .select()
+      .single()
+
     if (updateError) throw updateError
+
+    res.status(200).json(updatedPost)
   } catch (err) {
     res.status(400).json({ error: err.message })
   }
 })
+
 router.post('/downvotePost', async (req, res) => {
   try {
-    const { post_id, user_id } = req.body
-    //get the post
+    const { post_id } = req.body
+
     const { data, error } = await supabase
       .from('posts')
       .select()
       .eq('id', post_id)
       .single()
+
     if (error) throw error
 
     const { upvotes, downvotes } = data
 
-    //update the post
     const { data: updatedPost, error: updateError } = await supabase
       .from('posts')
       .update({
         upvotes: upvotes - 1,
       })
+      .eq('id', post_id) // ✅ This line fixes the issue
       .select()
+      .single()
+
     if (updateError) throw updateError
+
+    res.status(200).json(updatedPost)
   } catch (err) {
     res.status(400).json({ error: err.message })
   }

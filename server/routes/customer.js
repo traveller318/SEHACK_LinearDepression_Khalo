@@ -156,6 +156,5 @@ router.get('/getAllStalls', async (req, res) => {
     res.status(400).json({ error: error.message })
   }
 })
-
 //based on preference get the stalls
 export default router
