@@ -24,7 +24,11 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const { width } = Dimensions.get('window')
-import { getStallReview, getSingleStall } from '../../lib/routes/user.js'
+import {
+  getStallReview,
+  getSingleStall,
+  createReview,
+} from '../../lib/routes/user.js'
 import { getMenuItems } from '../../lib/routes/vendor.js'
 // Define types for our data
 interface MenuItem {
@@ -904,6 +908,9 @@ const StallPage = () => {
     outputRange: [0, 1],
     extrapolate: 'clamp',
   })
+  // const temp = useAuth()
+  // console.log(temp)
+
   const [REVIEWS, setReviews] = useState([
     {
       id: '1',
@@ -1308,6 +1315,28 @@ const StallPage = () => {
   }
 
   const renderReviewModal = () => {
+    const handleSubmitReview = async () => {
+      if (!userRating || !reviewText.trim()) {
+        alert('Please provide both a rating and feedback.')
+        return
+      }
+
+      try {
+        await createReview(
+          id,
+          '3c483ba7-56af-419b-8c03-8d576efcda4b',
+          userRating,
+          reviewText
+        )
+        alert('Review submitted successfully!')
+        setReviewModalVisible(false)
+        setUserRating(0)
+        setReviewText('')
+      } catch (err) {
+        alert('Something went wrong while submitting your review.')
+      }
+    }
+
     return (
       <Modal
         visible={reviewModalVisible}
@@ -1352,7 +1381,10 @@ const StallPage = () => {
               onChangeText={setReviewText}
             />
 
-            <TouchableOpacity style={styles.submitButton}>
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleSubmitReview}
+            >
               <LinearGradient
                 colors={['#FF9A5A', '#FF5200']}
                 start={{ x: 0, y: 0 }}
