@@ -1,14 +1,18 @@
-import { StyleSheet, Text, View, TouchableOpacity, Alert, ScrollView, Image } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity, Alert, ScrollView, Image, ActivityIndicator } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'expo-router'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { MaterialIcons } from '@expo/vector-icons'
+import VendorInformationForm from '../components/VendorInformationForm'
+import { checkIfVendorProfileExists } from '../../lib/vendorProfileHelpers'
 
 export default function VendorDashboard() {
   const { user } = useAuth()
   const router = useRouter()
   const [vendorProfile, setVendorProfile] = useState<any>(null)
+  const [showForm, setShowForm] = useState<boolean | null>(null)
+  const [loading, setLoading] = useState(true)
 
   const handleSignOut = async () => {
     try {
@@ -20,36 +24,74 @@ export default function VendorDashboard() {
     }
   }
 
+  // Check if user is a vendor
   useEffect(() => {
     if (user && user.user_metadata?.user_type !== 'vendor') {
       router.replace('/(auth)/signin')
     }
   }, [user])
 
+  // Check if vendor profile exists
   useEffect(() => {
-    const fetchVendorProfile = async () => {
+    const checkVendorProfile = async () => {
       if (user?.id) {
         try {
-          const { data, error } = await supabase
-            .from('vendor_profiles')
-            .select('*')
-            .eq('user_id', user.id)
-            .single()
-          
-          if (error) throw error
-          
-          setVendorProfile(data)
+          const hasProfile = await checkIfVendorProfileExists(user.id)
+          setShowForm(!hasProfile)
+          if (hasProfile) {
+            fetchVendorProfile()
+          } else {
+            setLoading(false)
+          }
         } catch (error) {
-          console.error('Error fetching vendor profile:', error)
+          console.error('Error checking vendor profile:', error)
+          setLoading(false)
         }
       }
     }
 
     if (user) {
-      fetchVendorProfile()
+      checkVendorProfile()
     }
   }, [user])
 
+  // Fetch vendor profile data
+  const fetchVendorProfile = async () => {
+    if (user?.id) {
+      try {
+        const { data, error } = await supabase
+          .from('vendor_profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single()
+        
+        if (error) throw error
+        
+        setVendorProfile(data)
+        setLoading(false)
+      } catch (error) {
+        console.error('Error fetching vendor profile:', error)
+        setLoading(false)
+      }
+    }
+  }
+
+  // Show loading state
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#ff8c00" />
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    )
+  }
+
+  // If the user needs to complete the form, show it
+  if (showForm) {
+    return <VendorInformationForm />
+  }
+
+  // Show dashboard with vendor profile data
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.header}>
@@ -245,5 +287,16 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 8,
     backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#ff8c00',
   },
 });
