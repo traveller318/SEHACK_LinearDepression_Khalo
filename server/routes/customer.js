@@ -156,7 +156,7 @@ router.get('/getAllStalls', async (req, res) => {
     res.status(400).json({ error: error.message })
   }
 })
-router.get('/getSingleStall', async (req, res) => {
+router.post('/getSingleStall', async (req, res) => {
   try {
     const { stall_id } = req.body
     const { data, error } = await supabase

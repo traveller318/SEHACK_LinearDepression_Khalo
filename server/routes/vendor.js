@@ -176,7 +176,7 @@ router.post('/createMenuItem', async (req, res) => {
   }
 })
 
-router.get('/getMenuItems', async (req, res) => {
+router.post('/getMenuItems', async (req, res) => {
   try {
     const { stall_id } = req.body
     const { data, error } = await supabase
