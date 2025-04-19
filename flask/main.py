@@ -102,6 +102,7 @@ def analyze_reviews(stall_id):
     except Exception as e:
         print(f"Unexpected error during analysis for stall ID {stall_id}: {str(e)}")
         return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
+  # Add this import at the top of your file
 
 CUISINE_KEYWORDS = [
     "chinese", "italian", "indian", "mexican", "thai", 
@@ -127,16 +128,28 @@ def analyze_speech():
                 if word in CUISINE_KEYWORDS
             ))
 
+            # Send the keywords to your Node.js route
+            node_url = "http://localhost:3000/customer/getKeywordStalls"
+            response = requests.post(
+                node_url,
+                json={"keywords": found_keywords},
+                headers={'Content-Type': 'application/json'}
+            )
+
+            # Return the response from your Node.js server
             return jsonify({
-                "cuisine_keywords": found_keywords,
-                "transcript": transcript
+                "status": "success",
+                "node_response": response.json(),
+                "keywords_sent": found_keywords
             })
+
     except sr.UnknownValueError:
         return jsonify({"error": "Speech not understood"}), 400
     except sr.RequestError as e:
         return jsonify({"error": f"Google API error: {e}"}), 500
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Failed to connect to Node server: {e}"}), 502
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
 if __name__ == "__main__":
     app.run(debug=True)
