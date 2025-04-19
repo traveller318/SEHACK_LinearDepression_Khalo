@@ -1,14 +1,14 @@
 import express from 'express'
 import supabase from '../db.js'
 const router = express.Router()
-
 // CREATE TABLE vendor_profiles (
 //   user_id UUID PRIMARY KEY REFERENCES users(id),
 //   phone TEXT,
 //   gst_number TEXT,
 //   certification TEXT,
 //   location TEXT,
-//   certification_image TEXT,
+//   certification_image TEXT,  -- image of certification
+//   profile_image TEXT,        -- ✅ new field for profile image
 //   created_at TIMESTAMP DEFAULT now()
 // );
 
@@ -21,6 +21,7 @@ router.post('/createVendorProfile', async (req, res) => {
       certification,
       location,
       certification_image,
+      profile_image,
     } = req.body
     const { data, error } = await supabase
       .from('vendor_profiles')
@@ -31,6 +32,7 @@ router.post('/createVendorProfile', async (req, res) => {
         certification,
         location,
         certification_image,
+        profile_image,
       })
       .select()
     if (error) throw error
