@@ -21,6 +21,8 @@ router.post('/createCustomerProfile', async (req, res) => {
       health_sensitivity,
       is_tourist,
     } = req.body
+    console.log("entered createCustomerProfile");
+    
     const { data, error } = await supabase.from('customer_profiles').insert({
       user_id,
       home_city,

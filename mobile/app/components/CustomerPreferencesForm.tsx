@@ -200,7 +200,7 @@ export default function CustomerPreferencesForm() {
         <TextInput
           style={styles.textInput}
           placeholder="Enter your current city"
-          placeholderTextColor="#ff8c00"
+          placeholderTextColor="#000000"
           value={homeCity}
           onChangeText={setHomeCity}
         />
@@ -427,7 +427,7 @@ export default function CustomerPreferencesForm() {
           <TextInput
             style={[styles.textInput, { marginTop: 10 }]}
             placeholder="Enter custom health sensitivity"
-            placeholderTextColor="#ff8c00"
+            placeholderTextColor="#000000"
             value={customSensitivity}
             onChangeText={setCustomSensitivity}
           />
@@ -456,7 +456,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#ff8c00',
   },
   headerContainer: {
-    backgroundColor: '#000000',
+    paddingTop: 50,
+    backgroundColor: '#ffffff',
     paddingVertical: 20,
     paddingHorizontal: 25,
     borderBottomLeftRadius: 30,
@@ -480,7 +481,7 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 16,
-    color: '#ffffff',
+    color: '#000000',
     marginBottom: 5,
     textAlign: 'center',
     fontStyle: 'italic',
@@ -488,7 +489,7 @@ const styles = StyleSheet.create({
   section: {
     marginHorizontal: 20,
     marginBottom: 20,
-    backgroundColor: '#000000',
+    backgroundColor: '#ffffff',
     borderRadius: 15,
     padding: 20,
     shadowColor: '#000',
@@ -503,7 +504,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#ff8c00',
+    color: '#00000',
     marginBottom: 15,
   },
   optionRow: {
@@ -515,7 +516,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#ff8c00',
+    borderColor: '#000000',
     alignItems: 'center',
     marginHorizontal: 8,
   },
@@ -525,7 +526,7 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontWeight: '600',
-    color: '#ff8c00',
+    color: '#000000',
     fontSize: 16,
   },
   selectedOptionText: {
@@ -534,12 +535,12 @@ const styles = StyleSheet.create({
   },
   textInput: {
     borderWidth: 1,
-    borderColor: '#ff8c00',
+    borderColor: '#000000',
     borderRadius: 12,
     padding: 15,
     fontSize: 16,
-    backgroundColor: 'rgba(255, 140, 0, 0.1)',
-    color: '#ffffff',
+    backgroundColor: '#ececec',
+    color: '#000000',
   },
   gridContainer: {
     flexDirection: 'row',
@@ -551,13 +552,13 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#ff8c00',
+    borderColor: '#000000',
     alignItems: 'center',
     marginBottom: 12,
   },
   gridItemText: {
     fontWeight: '600',
-    color: '#ff8c00',
+    color: '#000000',
     textAlign: 'center',
     fontSize: 14,
   },
@@ -566,11 +567,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 140, 0, 0.1)',
   },
   addCustomText: {
-    color: '#ff8c00',
+    color: '#000000',
     fontWeight: '600',
   },
   submitButton: {
-    backgroundColor: '#000000',
+    backgroundColor: '#ffffff',
     padding: 18,
     borderRadius: 15,
     alignItems: 'center',
