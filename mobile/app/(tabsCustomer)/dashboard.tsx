@@ -370,14 +370,15 @@ export default function DashboardScreen() {
             >
               <Marker
                 coordinate={{
-                  latitude: location?.coords.latitude || 19.1196,
-                  longitude: location?.coords.longitude || 72.8367,
+                  latitude: location?.coords?.latitude || 19.1196,
+                  longitude: location?.coords?.longitude || 72.8367,
                 }}
                 title={'My Location'}
                 description={'You are here'}
                 pinColor="#FF5200"
-                // image={require('./icons/pizza.png')}
+                //   image={require('./icons/pizza.png')}
               />
+
               {nearbyStalls.map((stall, index) => {
                 let markerImage // Declare markerImage
                 if (stall.cuisine === 'Chinese') {
@@ -393,7 +394,10 @@ export default function DashboardScreen() {
                 return (
                   <Marker
                     key={index}
-                    coordinate={{ latitude: stall.lat, longitude: stall.lng }}
+                    coordinate={{
+                      latitude: stall.lat || 19.1196,
+                      longitude: stall.lng || 72.8367,
+                    }}
                     title={stall.name}
                     description={stall.cuisine}
                   >
@@ -719,11 +723,11 @@ const StallCard = ({
   id = '1',
 }: StallCardProps) => {
   const router = useRouter()
-  
+
   const handlePress = () => {
     router.push(`/stalls/${id}`)
   }
-  
+
   return (
     <TouchableOpacity style={styles.stallCard} onPress={handlePress}>
       <Image source={{ uri: image }} style={styles.stallImage} />
@@ -806,15 +810,15 @@ const FilterTag = ({ icon, name, active = false, onPress }: FilterTagProps) => (
 
 // New Vertical Stall Card Component
 interface VerticalStallCardProps {
-  name: string;
-  image_url?: string;
-  cuisine: string;
-  distance: string;
-  deliveryTime: string;
-  rating: number;
-  hygieneScore: number;
-  verified?: boolean;
-  _id?: string; // Added id prop
+  name: string
+  image_url?: string
+  cuisine: string
+  distance: string
+  deliveryTime: string
+  rating: number
+  hygieneScore: number
+  verified?: boolean
+  _id?: string // Added id prop
 }
 
 const VerticalStallCard = ({
@@ -829,82 +833,82 @@ const VerticalStallCard = ({
   _id = '1', // Default id if none provided
 }: VerticalStallCardProps) => {
   const router = useRouter()
-  
+
   const handlePress = () => {
     router.push(`/stalls/${_id}`)
   }
-  
+
   return (
-  <TouchableOpacity style={styles.verticalStallCard} onPress={handlePress}>
-    <View style={styles.verticalStallContent}>
-      <View style={styles.verticalStallImageContainer}>
-        <Image
-          source={{
-            uri:
-              image_url ||
-              `https://via.placeholder.com/150/ffffff/000000?text=${name
-                .split(' ')
-                .map((s) => s[0])
-                .join('')}`,
-          }}
-          style={styles.verticalStallImage}
-        />
-      </View>
-      <View style={styles.verticalStallInfo}>
-        <View style={styles.verticalStallHeader}>
-          <Text style={styles.verticalStallName}>{name}</Text>
-          {verified && (
-            <View style={styles.verifiedBadge}>
-              <MaterialIcons name="verified" size={16} color="#4CAF50" />
+    <TouchableOpacity style={styles.verticalStallCard} onPress={handlePress}>
+      <View style={styles.verticalStallContent}>
+        <View style={styles.verticalStallImageContainer}>
+          <Image
+            source={{
+              uri:
+                image_url ||
+                `https://via.placeholder.com/150/ffffff/000000?text=${name
+                  .split(' ')
+                  .map((s) => s[0])
+                  .join('')}`,
+            }}
+            style={styles.verticalStallImage}
+          />
+        </View>
+        <View style={styles.verticalStallInfo}>
+          <View style={styles.verticalStallHeader}>
+            <Text style={styles.verticalStallName}>{name}</Text>
+            {verified && (
+              <View style={styles.verifiedBadge}>
+                <MaterialIcons name="verified" size={16} color="#4CAF50" />
+              </View>
+            )}
+          </View>
+          <Text style={styles.verticalStallCuisine}>{cuisine}</Text>
+          <View style={styles.verticalStallDetails}>
+            <View style={styles.verticalStallDetail}>
+              <MaterialIcons name="place" size={14} color="#666" />
+              <Text style={styles.verticalStallDetailText}>{distance}</Text>
             </View>
-          )}
-        </View>
-        <Text style={styles.verticalStallCuisine}>{cuisine}</Text>
-        <View style={styles.verticalStallDetails}>
-          <View style={styles.verticalStallDetail}>
-            <MaterialIcons name="place" size={14} color="#666" />
-            <Text style={styles.verticalStallDetailText}>{distance}</Text>
-          </View>
-          <View style={styles.verticalStallDetail}>
-            <MaterialIcons name="access-time" size={14} color="#666" />
-            <Text style={styles.verticalStallDetailText}>{deliveryTime}</Text>
-          </View>
-        </View>
-        <View style={styles.verticalStallRatings}>
-          <View style={styles.verticalStallRating}>
-            <MaterialIcons name="star" size={16} color="#FFD700" />
-            <Text style={styles.verticalStallRatingText}>{rating}</Text>
-          </View>
-          <View style={styles.verticalStallHygiene}>
-            <MaterialCommunityIcons
-              name="silverware-clean"
-              size={16}
-              color="#4CAF50"
-            />
-            <View style={styles.hygieneStars}>
-              {Array(5)
-                .fill(0)
-                .map((_, i) => (
-                  <MaterialIcons
-                    key={i}
-                    name="star"
-                    size={12}
-                    color={i < hygiene_score ? '#4CAF50' : '#e0e0e0'}
-                    style={{ marginRight: 2 }}
-                  />
-                ))}
+            <View style={styles.verticalStallDetail}>
+              <MaterialIcons name="access-time" size={14} color="#666" />
+              <Text style={styles.verticalStallDetailText}>{deliveryTime}</Text>
             </View>
           </View>
+          <View style={styles.verticalStallRatings}>
+            <View style={styles.verticalStallRating}>
+              <MaterialIcons name="star" size={16} color="#FFD700" />
+              <Text style={styles.verticalStallRatingText}>{rating}</Text>
+            </View>
+            <View style={styles.verticalStallHygiene}>
+              <MaterialCommunityIcons
+                name="silverware-clean"
+                size={16}
+                color="#4CAF50"
+              />
+              <View style={styles.hygieneStars}>
+                {Array(5)
+                  .fill(0)
+                  .map((_, i) => (
+                    <MaterialIcons
+                      key={i}
+                      name="star"
+                      size={12}
+                      color={i < hygiene_score ? '#4CAF50' : '#e0e0e0'}
+                      style={{ marginRight: 2 }}
+                    />
+                  ))}
+              </View>
+            </View>
+          </View>
         </View>
       </View>
-    </View>
-    <MaterialIcons
-      name="chevron-right"
-      size={24}
-      color="#999"
-      style={styles.verticalStallArrow}
-    />
-  </TouchableOpacity>
+      <MaterialIcons
+        name="chevron-right"
+        size={24}
+        color="#999"
+        style={styles.verticalStallArrow}
+      />
+    </TouchableOpacity>
   )
 }
 
