@@ -12,16 +12,14 @@ import groq
 from supabase import create_client, Client
 from nltk_review import analyze_reviews as analyze_reviews_nltk  # Import the review analysis function
 from groq import Groq
-import io 
-from gtts import gTTS
 import torch 
-import base64
+
 app = Flask(__name__)
+import wave
 CORS(app)
 NODE_API_URL = os.getenv("NODE_API_URL")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-client = Groq(api_key=GROQ_API_KEY)
 
 @app.route('/generate_report', methods=['POST'])
 def generate_report():
@@ -117,101 +115,111 @@ CUISINE_KEYWORDS = [
     "japanese", "french", "mediterranean", "american", 
     "vietnamese", "korean", "spanish", "greek", "lebanese"
 ]
-
-@app.route('/analyze_speech', methods=['POST'])
-def analyze_speech():
-    if 'audio' not in request.files:
-        return jsonify({"error": "No audio file provided"}), 400
-
-    audio_file = request.files['audio']
-    recognizer = sr.Recognizer()
-
-    try:
-        with sr.AudioFile(audio_file) as source:
-            audio_data = recognizer.record(source)
-            transcript = recognizer.recognize_google(audio_data).lower()
-
-            found_keywords = list(set(
-                word for word in re.findall(r'\w+', transcript)
-                if word in CUISINE_KEYWORDS
-            ))
-
-            # Send the keywords to your Node.js route
-            node_url = "http://10.10.112.73:3000/customer/getKeywordStalls"
-            response = requests.post(
-                node_url,
-                json={"keywords": found_keywords},
-                headers={'Content-Type': 'application/json'}
-            )
-
-            # Return the response from your Node.js server
-            return jsonify({
-                "status": "success",
-                "node_response": response.json(),
-                "keywords_sent": found_keywords
-            })
-
-    except sr.UnknownValueError:
-        return jsonify({"error": "Speech not understood"}), 400
-    except sr.RequestError as e:
-        return jsonify({"error": f"Google API error: {e}"}), 500
-    except requests.exceptions.RequestException as e:
-        return jsonify({"error": f"Failed to connect to Node server: {e}"}), 502
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500  
-  # assuming you're using groq SDK; adjust if different
-
-
-
-# Load Whisper model
-whisper_model = whisper.load_model("base")  # Using base model for faster processing
+groq_client = groq.Client(api_key=os.getenv("GROQ_API_KEY"))
 @app.route('/foodAssistant', methods=['POST'])
 def food_assistant():
     try:
-        # Get form data with stall_id and audio file
-        stall_id = request.form.get('stall_id')
-        audio_file = request.files.get('audio')
-        
-        if not stall_id or not audio_file:
-            return jsonify({"error": "Missing stall_id or audio file"}), 400
+        # Get JSON data from request
+        data = request.get_json()
+        if not data or 'stall_id' not in data:
+            return jsonify({"error": "Missing stall_id in JSON payload"}), 400
 
-        # Process audio directly from memory
-        audio_bytes = audio_file.read()
-        audio_buffer = io.BytesIO(audio_bytes)
-        
-        # Transcribe using Whisper (works with file-like objects)
-        result = whisper_model.transcribe(audio_buffer)
-        transcription = result["text"]
-        
-        # Get stall data
-        stall_resp = requests.get("https://khalo-r5v5.onrender.com/customer/getSingleStall", 
-                                json={"stall_id": stall_id})
-        menu_resp = requests.get("https://khalo-r5v5.onrender.com/vendor/getMenuItems",
-                               json={"stall_id": stall_id})
-        
-        if stall_resp.status_code != 200 or menu_resp.status_code != 200:
-            return jsonify({"error": "Failed to fetch stall/menu data"}), 400
+        stall_id = data['stall_id']
 
-        # Generate LLM response
-        prompt = f"""..."""  # Your existing prompt logic
-        response = groq_client.chat.completions.create(...)
-        assistant_response = response.choices[0].message.content
-        
-        # Generate audio response in memory
-        tts = gTTS(text=assistant_response, lang='en')
-        audio_response = io.BytesIO()
-        tts.write_to_fp(audio_response)
-        audio_response.seek(0)
-        
+        # Fetch stall data
+        stall_resp = requests.post(
+            "https://khalo-r5v5.onrender.com/customer/getSingleStall",
+            json={"stall_id": stall_id},
+            headers={'Content-Type': 'application/json'}
+        )
+        if stall_resp.status_code != 200:
+            return jsonify({"error": f"Stall API failed: {stall_resp.text}"}), 400
+
+        try:
+            stall_data = stall_resp.json()
+            # Handle case where response is a list
+            if isinstance(stall_data, list):
+                if len(stall_data) == 0:
+                    return jsonify({"error": "No stall data found"}), 400
+                stall_data = stall_data[0]
+            elif not isinstance(stall_data, dict):
+                return jsonify({"error": "Invalid stall data format"}), 400
+        except ValueError:
+            return jsonify({"error": "Invalid JSON from Stall API"}), 400
+
+        # Fetch menu data
+        menu_resp = requests.post(
+            "https://khalo-r5v5.onrender.com/vendor/getMenuItems",
+            json={"stall_id": stall_id},
+            headers={'Content-Type': 'application/json'}
+        )
+        if menu_resp.status_code != 200:
+            return jsonify({"error": f"Menu API failed: {menu_resp.text}"}), 400
+
+        try:
+            menu_items = menu_resp.json()
+            if not isinstance(menu_items, list):
+                menu_items = []  # Default to empty list if unexpected format
+        except ValueError:
+            return jsonify({"error": "Invalid JSON from Menu API"}), 400
+
+        # Generate prompt
+        prompt = f"""
+You are an expert food assistant at a food court. Use this information:
+
+=== STALL DETAILS ===
+Name: {stall_data.get('name', 'Unknown Stall')}
+Cuisine: {stall_data.get('cuisine_type', 'Various')}
+Rating: {stall_data.get('rating', 'Not rated')}
+Description: {stall_data.get('description', 'No description available')}
+
+=== MENU ITEMS ===
+{format_menu_items(menu_items)}
+
+Please provide helpful recommendations or answer questions.
+"""
+
+        # Get LLM response
+        response = groq_client.chat.completions.create(
+            model="Llama-3.1-8b-Instant",
+            messages=[
+                {"role": "system", "content": "You are a friendly food assistant."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+
         return jsonify({
-            "status": "success",
-            "transcribed_text": transcription,
-            "text_response": assistant_response,
-            "audio_response": base64.b64encode(audio_response.getvalue()).decode('utf-8')
+            "assistant_response": response.choices[0].message.content,
+            "stall_name": stall_data.get('name'),
+            "cuisine": stall_data.get('cuisine_type')
         })
 
     except Exception as e:
-        return jsonify({"status": "error", "error": str(e)}), 500
+        return jsonify({"error": str(e)}), 500
+
+
+def format_menu_items(menu_data):
+    """Safely format menu items that could be a list or dict"""
+    if not menu_data:
+        return "No menu items available"
     
+    if isinstance(menu_data, dict):
+        menu_data = [menu_data]
+    
+    if not isinstance(menu_data, list):
+        return "Invalid menu format"
+    
+    items = []
+    for item in menu_data:
+        if not isinstance(item, dict):
+            continue
+        items.append(
+            f"- {item.get('name', 'Unnamed Item')}: "
+            f"${item.get('price', '?')} "
+            f"({'veg' if item.get('is_vegetarian', False) else 'non-veg'})"
+        )
+    
+    return '\n'.join(items) if items else "No valid menu items found"
+
 if __name__ == "__main__":
     app.run(debug=True)
