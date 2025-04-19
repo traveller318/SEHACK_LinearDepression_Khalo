@@ -4,6 +4,8 @@ from whatsapp_notifier import WhatsAppNotifier  # Import the WhatsApp notifier c
 import os
 import requests
 import json
+import speech_recognition as sr
+import re 
         # Import the function properly (make sure it's not shadowing this function name)
 from nltk_review import analyze_reviews as analyze_reviews_nltk  # Import the review analysis function
 from groq import Groq
@@ -100,6 +102,41 @@ def analyze_reviews(stall_id):
     except Exception as e:
         print(f"Unexpected error during analysis for stall ID {stall_id}: {str(e)}")
         return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
+
+CUISINE_KEYWORDS = [
+    "chinese", "italian", "indian", "mexican", "thai", 
+    "japanese", "french", "mediterranean", "american", 
+    "vietnamese", "korean", "spanish", "greek", "lebanese"
+]
+
+@app.route('/analyze_speech', methods=['POST'])
+def analyze_speech():
+    if 'audio' not in request.files:
+        return jsonify({"error": "No audio file provided"}), 400
+
+    audio_file = request.files['audio']
+    recognizer = sr.Recognizer()
+
+    try:
+        with sr.AudioFile(audio_file) as source:
+            audio_data = recognizer.record(source)
+            transcript = recognizer.recognize_google(audio_data).lower()
+
+            found_keywords = list(set(
+                word for word in re.findall(r'\w+', transcript)
+                if word in CUISINE_KEYWORDS
+            ))
+
+            return jsonify({
+                "cuisine_keywords": found_keywords,
+                "transcript": transcript
+            })
+    except sr.UnknownValueError:
+        return jsonify({"error": "Speech not understood"}), 400
+    except sr.RequestError as e:
+        return jsonify({"error": f"Google API error: {e}"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     
 if __name__ == "__main__":
     app.run(debug=True)

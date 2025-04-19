@@ -102,7 +102,7 @@ router.post('/getNearbyStalls', async (req, res) => {
     const { data, error } = await supabase.rpc('get_nearby_stalls', {
       lat: lat,
       lng: lng,
-      radius: radius,
+      radius: radius || 2500,
     })
 
     // If there is an error in the RPC function call
