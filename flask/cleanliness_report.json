@@ -1,0 +1,25 @@
+{
+  "status": "success",
+  "report": {
+    "cleanliness_rating": 6,
+    "issues_found": [
+      "Grease buildup on cooking surfaces",
+      "Food debris on floors and countertops",
+      "Dirty utensils and equipment",
+      "Lack of trash cans and recycling bins",
+      "Uncovered food and ingredients"
+    ],
+    "recommendations": [
+      "Implement a daily cleaning schedule for cooking surfaces and equipment",
+      "Sweep and mop floors regularly to prevent food debris accumulation",
+      "Establish a utensil and equipment sanitizing protocol",
+      "Provide adequate trash and recycling facilities",
+      "Cover food and ingredients when not in use to prevent contamination"
+    ],
+    "good_practices": [
+      "Separation of raw and cooked foods",
+      "Use of gloves by food handlers"
+    ],
+    "overall_summary": "While some good practices are observed, the cooking area requires significant improvement in terms of cleanliness and organization to ensure a safe and healthy food environment."
+  }
+}
