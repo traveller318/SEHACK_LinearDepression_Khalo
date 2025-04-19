@@ -1,9 +1,44 @@
-import { StyleSheet, Text, View, SafeAreaView } from 'react-native';
-import React from 'react';
+import { StyleSheet, Text, View, SafeAreaView, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import FoodSwiper from '../components/FoodSwiper';
+import RecommendedStalls from '../components/RecommendedStalls';
+import { getAIRecommendations } from '../../services/recommendationService';
 
-export default function HongryScreen() {
+// Explicitly set displayName for the HongryScreen component
+const HongryScreen = () => {
   const insets = useSafeAreaInsets();
+  const [selectedFoods, setSelectedFoods] = useState<any[]>([]);
+  const [recommendedStalls, setRecommendedStalls] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showSwiper, setShowSwiper] = useState(true);
+
+  const handleFinishSwiping = async (foods: any[]) => {
+    if (foods.length > 0) {
+      setSelectedFoods(foods);
+      setLoading(true);
+      
+      try {
+        // Get AI recommendations based on selected foods
+        const stalls = await getAIRecommendations(foods);
+        setRecommendedStalls(stalls);
+      } catch (error) {
+        console.error('Error getting recommendations:', error);
+      } finally {
+        setLoading(false);
+        setShowSwiper(false);
+      }
+    } else {
+      // Handle case when no foods were selected
+      setShowSwiper(false);
+    }
+  };
+
+  const handleBackToSwiper = () => {
+    setSelectedFoods([]);
+    setRecommendedStalls([]);
+    setShowSwiper(true);
+  };
 
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
@@ -11,13 +46,25 @@ export default function HongryScreen() {
         <Text style={styles.headerTitle}>Hongry</Text>
       </View>
       
-      <View style={styles.content}>
-        <Text style={styles.welcomeText}>Welcome to Hongry</Text>
-        <Text style={styles.descriptionText}>Your food delivery experience simplified</Text>
-      </View>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF5200" />
+          <Text style={styles.loadingText}>Finding the perfect stalls for you...</Text>
+        </View>
+      ) : showSwiper ? (
+        <FoodSwiper onFinish={handleFinishSwiping} />
+      ) : (
+        <RecommendedStalls 
+          stalls={recommendedStalls}
+          onBackToSwiper={handleBackToSwiper}
+        />
+      )}
     </SafeAreaView>
   );
-}
+};
+
+// Explicitly set displayName to fix the error
+HongryScreen.displayName = 'HongryScreen';
 
 const styles = StyleSheet.create({
   container: {
@@ -33,6 +80,18 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#FF5200',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
   content: {
     flex: 1,
@@ -52,3 +111,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
+export default HongryScreen;

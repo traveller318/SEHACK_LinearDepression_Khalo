@@ -4,6 +4,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider } from "../contexts/AuthContext";
 
 // Keep the splash screen visible while we fetch resources
@@ -28,15 +29,17 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <StatusBar style="light" />
-      <Stack 
-        screenOptions={{ 
-          headerShown: false,
-          contentStyle: { backgroundColor: '#ff8c00' },
-          animation: 'fade_from_bottom',
-        }} 
-      />
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <StatusBar style="light" />
+        <Stack 
+          screenOptions={{ 
+            headerShown: false,
+            contentStyle: { backgroundColor: '#ff8c00' },
+            animation: 'fade_from_bottom',
+          }} 
+        />
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }

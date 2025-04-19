@@ -129,7 +129,7 @@ def analyze_speech():
             ))
 
             # Send the keywords to your Node.js route
-            node_url = "http://localhost:3000/customer/getKeywordStalls"
+            node_url = "http://10.10.112.73:3000/customer/getKeywordStalls"
             response = requests.post(
                 node_url,
                 json={"keywords": found_keywords},
