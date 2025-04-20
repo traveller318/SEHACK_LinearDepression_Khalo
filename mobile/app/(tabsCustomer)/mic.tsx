@@ -3,68 +3,30 @@ import React, { useState, useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
-import axios from 'axios';
-
-// Define stall interface
-interface Stall {
-  id?: string | number;
-  name: string;
-  image?: string;
-  cuisine: string;
-  distance?: string;
-  deliveryTime?: string;
-  rating?: string | number;
-  hygieneScore?: string | number;
-  verified?: boolean;
-}
-
-// Stall card component
-const StallCard = ({ stall }: { stall: Stall }) => {
-  return (
-    <View style={styles.stallCard}>
-      <Image 
-        source={{ uri: stall.image || 'https://via.placeholder.com/100' }} 
-        style={styles.stallImage} 
-      />
-      <View style={styles.stallInfo}>
-        <Text style={styles.stallName}>{stall.name}</Text>
-        <Text style={styles.stallCuisine}>{stall.cuisine}</Text>
-        <View style={styles.stallMetrics}>
-          <View style={styles.metricItem}>
-            <MaterialIcons name="star" size={16} color="#FFC107" />
-            <Text style={styles.metricText}>{stall.rating || '4.5'}</Text>
-          </View>
-          <View style={styles.metricItem}>
-            <MaterialIcons name="location-on" size={16} color="#FF5200" />
-            <Text style={styles.metricText}>{stall.distance || '0.5 km'}</Text>
-          </View>
-          <View style={styles.metricItem}>
-            <MaterialIcons name="delivery-dining" size={16} color="#4CAF50" />
-            <Text style={styles.metricText}>{stall.deliveryTime || '20 min'}</Text>
-          </View>
-        </View>
-      </View>
-      {stall.verified && (
-        <View style={styles.verifiedBadge}>
-          <MaterialIcons name="verified" size={16} color="#4CAF50" />
-        </View>
-      )}
-    </View>
-  );
-};
 
 export default function MicScreen() {
   const insets = useSafeAreaInsets();
   const [isListening, setIsListening] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [keywords, setKeywords] = useState<string[]>([]);
-  const [stalls, setStalls] = useState<Stall[]>([]);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [recordingUri, setRecordingUri] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [duration, setDuration] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [recordingsList, setRecordingsList] = useState<{uri: string, duration: number}[]>([]);
 
   const startRecording = async () => {
     try {
       setError(null);
+      // Stop any playing sound
+      if (sound) {
+        await sound.unloadAsync();
+        setSound(null);
+        setIsPlaying(false);
+      }
+      setRecordingUri(null);
+      setDuration(null);
+
       // Request permissions
       const { status } = await Audio.requestPermissionsAsync();
       if (status !== 'granted') {
@@ -78,9 +40,34 @@ export default function MicScreen() {
         playsInSilentModeIOS: true,
       });
 
-      // Create and start recording
+      // Create and start recording with MP3 format
       const newRecording = new Audio.Recording();
-      await newRecording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      await newRecording.prepareToRecordAsync({
+        android: {
+          extension: '.mp3',
+          outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+          audioEncoder: Audio.AndroidAudioEncoder.AAC,
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 128000,
+        },
+        ios: {
+          extension: '.mp3',
+          outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
+          audioQuality: Audio.IOSAudioQuality.MAX,
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 128000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        web: {
+          mimeType: 'audio/mp3',
+          bitsPerSecond: 128000,
+        },
+      });
+      
       await newRecording.startAsync();
       setRecording(newRecording);
       setIsListening(true);
@@ -95,63 +82,94 @@ export default function MicScreen() {
     if (!recording) return;
 
     try {
-      setIsProcessing(true);
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
       console.log('Recording stopped and stored at', uri);
+      
+      const { sound: newSound, status } = await Audio.Sound.createAsync(
+        { uri: uri! },
+        { shouldPlay: false }
+      );
+      
+      let durationMillis = 0;
+      if (status.isLoaded) {
+        durationMillis = status.durationMillis || 0;
+      }
+      setDuration(durationMillis / 1000); // Convert to seconds
+      
       setRecording(null);
       if (uri) {
-        await processAudio(uri);
+        setRecordingUri(uri);
+        setRecordingsList(prev => [...prev, {uri, duration: durationMillis / 1000}]);
+        
+        // Load the recorded audio for playback
+        await loadSound(uri);
       } else {
         setError('Failed to get recording URI');
-        setIsProcessing(false);
       }
     } catch (err: any) {
       setError('Failed to stop recording: ' + err.message);
       console.error('Failed to stop recording', err);
-      setIsProcessing(false);
     }
   };
 
-  const processAudio = async (uri: string) => {
+  const loadSound = async (uri: string) => {
     try {
-      // Create form data with the audio file
-      const formData = new FormData();
-      formData.append('audio', {
-        uri: uri,
-        name: 'recording.wav',
-        type: 'audio/wav',
-      } as any);
+      if (sound) {
+        await sound.unloadAsync();
+      }
+      const { sound: newSound } = await Audio.Sound.createAsync({ uri });
+      setSound(newSound);
 
-      // Send the audio to the Flask server
-      const response = await axios.post(
-        'http://10.10.112.73:5000/analyze_speech',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
+      // Set up playback status update listener
+      newSound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && !status.isPlaying && status.didJustFinish) {
+          setIsPlaying(false);
         }
-      );
+      });
+    } catch (err: any) {
+      setError('Failed to load sound: ' + err.message);
+      console.error('Failed to load sound', err);
+    }
+  };
 
-      const data = response.data;
-      if (data.status === 'success') {
-        setKeywords(data.keywords_sent || []);
-        
-        // Process stalls from node_response
-        if (data.node_response && Array.isArray(data.node_response)) {
-          setStalls(data.node_response);
+  const playSound = async (uri: string = '') => {
+    try {
+      const audioUri = uri || recordingUri;
+      
+      if (!sound || (uri && uri !== recordingUri)) {
+        if (audioUri) {
+          await loadSound(audioUri);
+          setRecordingUri(audioUri);
         } else {
-          setStalls([]);
+          return;
         }
-      } else {
-        setError(data.error || 'Unknown error');
+      }
+      
+      // Set audio mode for playback
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+      });
+      
+      await sound?.playFromPositionAsync(0);
+      setIsPlaying(true);
+    } catch (err: any) {
+      setError('Failed to play recording: ' + err.message);
+      console.error('Failed to play recording', err);
+    }
+  };
+
+  const stopSound = async () => {
+    try {
+      if (sound) {
+        await sound.stopAsync();
+        setIsPlaying(false);
       }
     } catch (err: any) {
-      setError('Failed to process audio: ' + err.message);
-      console.error('Failed to process audio', err);
-    } finally {
-      setIsProcessing(false);
+      setError('Failed to stop playback: ' + err.message);
+      console.error('Failed to stop playback', err);
     }
   };
 
@@ -163,80 +181,109 @@ export default function MicScreen() {
     }
   };
 
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
   // Clean up when component unmounts
   useEffect(() => {
     return () => {
       if (recording) {
         recording.stopAndUnloadAsync();
       }
+      if (sound) {
+        sound.unloadAsync();
+      }
     };
-  }, [recording]);
+  }, [recording, sound]);
 
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Voice Assistant</Text>
+        <Text style={styles.headerTitle}>Voice Recorder</Text>
       </View>
       
       <View style={styles.content}>
-        {isProcessing ? (
-          <View style={styles.processingContainer}>
-            <ActivityIndicator size="large" color="#FF5200" />
-            <Text style={styles.processingText}>Processing your request...</Text>
-          </View>
-        ) : (
-          <>
-            <Text style={styles.instructionText}>
-              {isListening ? 'Listening...' : 'Tap the microphone to start'}
-            </Text>
-            
+        <Text style={styles.instructionText}>
+          {isListening ? 'Listening...' : 'Tap the microphone to start'}
+        </Text>
+        
+        <TouchableOpacity 
+          style={[
+            styles.micButton, 
+            isListening && styles.listeningButton
+          ]}
+          onPress={toggleListening}
+        >
+          <FontAwesome 
+            name="microphone" 
+            size={40} 
+            color={isListening ? "#ffffff" : "#FF5200"} 
+          />
+        </TouchableOpacity>
+        
+        {recordingUri && (
+          <View style={styles.playbackContainer}>
             <TouchableOpacity 
-              style={[
-                styles.micButton, 
-                isListening && styles.listeningButton
-              ]}
-              onPress={toggleListening}
+              style={styles.playbackButton}
+              onPress={isPlaying ? stopSound : () => playSound()}
             >
               <FontAwesome 
-                name="microphone" 
-                size={40} 
-                color={isListening ? "#ffffff" : "#FF5200"} 
+                name={isPlaying ? "stop" : "play"} 
+                size={24} 
+                color="#ffffff" 
               />
             </TouchableOpacity>
-            
-            <Text style={styles.helpText}>
-              Try saying: "Show me Chinese restaurants" or "Find Indian food"
-            </Text>
-
-            {error && (
-              <Text style={styles.errorText}>{error}</Text>
-            )}
-
-            {keywords.length > 0 && (
-              <View style={styles.keywordsContainer}>
-                <Text style={styles.keywordsTitle}>Detected cuisines:</Text>
-                <View style={styles.keywordsList}>
-                  {keywords.map((keyword, index) => (
-                    <View key={index} style={styles.keywordChip}>
-                      <Text style={styles.keywordText}>{keyword}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
-          </>
+            <View>
+              <Text style={styles.playbackText}>
+                {isPlaying ? "Stop Playback" : "Play Recording"}
+              </Text>
+              {duration && (
+                <Text style={styles.durationText}>
+                  Duration: {formatDuration(duration)}
+                </Text>
+              )}
+            </View>
+          </View>
+        )}
+        
+        {error && (
+          <Text style={styles.errorText}>{error}</Text>
         )}
 
-        {stalls.length > 0 && (
-          <View style={styles.stallsContainer}>
-            <Text style={styles.stallsTitle}>Recommended Stalls</Text>
+        {recordingsList.length > 0 && (
+          <View style={styles.recordingsContainer}>
+            <Text style={styles.recordingsTitle}>Your Recordings</Text>
             <FlatList
-              data={stalls}
-              renderItem={({ item }) => <StallCard stall={item} />}
-              keyExtractor={(item, index) => item.id?.toString() || index.toString()}
-              horizontal={false}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.stallsList}
+              data={recordingsList}
+              renderItem={({ item, index }) => (
+                <TouchableOpacity 
+                  style={styles.recordingItem}
+                  onPress={() => playSound(item.uri)}
+                >
+                  <View style={styles.recordingIcon}>
+                    <FontAwesome name="file-audio-o" size={24} color="#FF5200" />
+                  </View>
+                  <View style={styles.recordingInfo}>
+                    <Text style={styles.recordingName}>Recording {index + 1}</Text>
+                    <Text style={styles.recordingDuration}>{formatDuration(item.duration)}</Text>
+                  </View>
+                  <TouchableOpacity 
+                    style={styles.playIcon}
+                    onPress={() => playSound(item.uri)}
+                  >
+                    <FontAwesome 
+                      name={isPlaying && recordingUri === item.uri ? "stop" : "play"} 
+                      size={20} 
+                      color="#FF5200" 
+                    />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(_, index) => index.toString()}
+              contentContainerStyle={styles.recordingsList}
             />
           </View>
         )}
@@ -262,12 +309,13 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     padding: 20,
   },
   instructionText: {
     fontSize: 18,
+    marginTop: 30,
     marginBottom: 40,
     color: '#333333',
   },
@@ -289,69 +337,51 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF5200',
     transform: [{ scale: 1.1 }],
   },
-  helpText: {
-    fontSize: 15,
-    color: '#666666',
-    textAlign: 'center',
-    maxWidth: '80%',
+  playbackContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 20,
+  },
+  playbackButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#FF5200',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  playbackText: {
+    fontSize: 16,
+    color: '#333333',
+  },
+  durationText: {
+    fontSize: 14,
+    color: '#666666',
+    marginTop: 4,
   },
   errorText: {
     color: 'red',
     marginTop: 10,
     textAlign: 'center',
   },
-  processingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  processingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#333333',
-  },
-  keywordsContainer: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  keywordsTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#333333',
-  },
-  keywordsList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  keywordChip: {
-    backgroundColor: '#ffebee',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    margin: 4,
-  },
-  keywordText: {
-    color: '#FF5200',
-    fontWeight: '500',
-  },
-  stallsContainer: {
-    marginTop: 20,
+  recordingsContainer: {
     width: '100%',
+    marginTop: 20,
     flex: 1,
   },
-  stallsTitle: {
+  recordingsTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 12,
     color: '#333333',
   },
-  stallsList: {
+  recordingsList: {
     paddingBottom: 20,
   },
-  stallCard: {
+  recordingItem: {
     flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'white',
     borderRadius: 8,
     marginBottom: 12,
@@ -361,45 +391,35 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
-    position: 'relative',
   },
-  stallImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
+  recordingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#ffebee',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
-  stallInfo: {
+  recordingInfo: {
     flex: 1,
-    justifyContent: 'space-between',
   },
-  stallName: {
+  recordingName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '500',
     color: '#333333',
   },
-  stallCuisine: {
+  recordingDuration: {
     fontSize: 14,
     color: '#666666',
     marginTop: 2,
   },
-  stallMetrics: {
-    flexDirection: 'row',
-    marginTop: 8,
-  },
-  metricItem: {
-    flexDirection: 'row',
+  playIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
-  },
-  metricText: {
-    fontSize: 12,
-    marginLeft: 2,
-    color: '#666666',
-  },
-  verifiedBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
   },
 });

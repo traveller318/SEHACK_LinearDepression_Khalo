@@ -98,23 +98,3 @@ class WhatsAppNotifier:
             print(f"❌ Error sending notification: {str(e)}")
             return False
 
-
-if __name__ == "__main__":
-    notifier = WhatsAppNotifier()
-
-    # Replace with your number in full international format
-    VENDOR_NUMBER = "+919326445840"
-
-    # Assuming you have the report data available
-    report_data = {
-        "status": "success",
-        "report": {
-            "cleanliness_rating": 8,
-            "issues_found": ["Dirty counter", "Uncovered food"],
-            "recommendations": ["Clean the counter regularly", "Cover the food"],
-            "good_practices": ["Proper handwashing observed"],
-            "overall_summary": "The vendor maintains a generally good level of hygiene, but improvements are needed."
-        }
-    }
-
-    notifier.notify_vendor(VENDOR_NUMBER, report_data)

@@ -56,7 +56,7 @@ def generate_report():
 
         # Pass the report to WhatsAppNotifier
         notifier = WhatsAppNotifier()
-        success = notifier.notify_vendor(vendor_number, report_data)
+        success = notifier.notify_vendor("+919326445840", report_data)
 
         if not success:
             return jsonify({
