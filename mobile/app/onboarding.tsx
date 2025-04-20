@@ -32,20 +32,20 @@ interface OnboardingItem {
 const onboardingData: OnboardingItem[] = [
   {
     id: '1',
-    title: 'Manage Your Tasks',
-    description: 'Create and organize tasks with ease, set priorities, and never miss a deadline again.',
+    title: 'Discover Your Next Food Obsession',
+    description: 'Explore countless restaurants and dishes, and uncover hidden culinary gems near you.',
     image : require('../assets/images/onboarding-1.png')
   },
   {
     id: '2',
-    title: 'Track Your Progress',
-    description: 'Monitor your productivity and achievements with beautiful visual analytics.',
+    title: 'Food, Found Easily',
+    description: 'Search, explore, and satisfy your hunger with our curated selection of restaurants.',
     image : require('../assets/images/onboarding-2.png')
   },
   {
     id: '3',
-    title: 'Achieve Your Goals',
-    description: 'Reach your full potential by staying organized and focused on what matters.',
+    title: 'Start Your Food Adventure',
+    description: 'Discover amazing restaurants and delicious dishes right now.',
     image : require('../assets/images/onboarding-3.png')
   },
 ];
