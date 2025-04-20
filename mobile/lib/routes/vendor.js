@@ -99,7 +99,7 @@ export const createOrder = async (orderData) => {
 // Create Menu Item
 export const createMenuItem = async (menuItemData) => {
   try {
-    const response = await fetch('/api/createMenuItem', {
+    const response = await fetch('', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -123,23 +123,29 @@ export const createMenuItem = async (menuItemData) => {
 // Get Menu Items
 export const getMenuItems = async (stall_id) => {
   try {
-    const response = await fetch('/api/getMenuItems', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ stall_id }),
-    })
+    const response = await fetch(
+      'https://khalo-r5v5.onrender.com/vendor/getMenuItems', // ✅ updated route
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ stall_id }),
+      }
+    )
+
+    const data = await response.json()
+    console.log(response.json())
 
     if (response.ok) {
-      const data = await response.json()
       console.log('Menu items fetched:', data)
       return data
     } else {
-      const errorData = await response.json()
-      console.log('Failed to fetch menu items:', errorData)
+      console.log('Failed to fetch menu items:', data)
+      return []
     }
   } catch (error) {
     console.error('Error fetching menu items:', error)
+    return []
   }
 }

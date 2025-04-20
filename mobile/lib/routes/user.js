@@ -86,21 +86,25 @@ export const getKeywordStalls = async (keywords) => {
 
 export const getSingleStall = async (stall_id) => {
   try {
-    const response = await fetch(`/api/getSingleStall`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        stall_id,
-      }),
-    })
-
+    const response = await fetch(
+      `https://khalo-r5v5.onrender.com/customer/getSingleStall`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          stall_id,
+        }),
+      }
+    )
+    // console.log('Hello')
     // Check if the response is successful
+    console.log(response.ok)
     if (response.ok) {
       const data = await response.json()
-      console.log('Stall data:', data)
-      return data // You can use this data as needed
+      console.log('Stall data:', data[0])
+      return data[0] // You can use this data as needed
     } else {
       const errorData = await response.json()
       console.log('Failed to fetch stall data:', errorData)

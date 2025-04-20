@@ -1,8 +1,20 @@
-import { StyleSheet, Text, View, ScrollView, Image, TouchableOpacity, SafeAreaView, FlatList } from 'react-native';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  SafeAreaView,
+  FlatList,
+  ActivityIndicator,
+} from 'react-native';
+import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { generateItineraries } from '../../services/itenaryService'; // Import the helper function
 
 type TourExperience = {
   id: string;
@@ -14,70 +26,105 @@ type TourExperience = {
   location: string;
 };
 
-const demoTours: TourExperience[] = [
-  {
-    id: '1',
-    title: 'Traditional Food Tour',
-    description: 'Experience local flavors with our guided food tour through the most authentic eateries.',
-    image: 'https://via.placeholder.com/400x300/FF9A5A/ffffff?text=Food+Tour',
-    rating: 4.8,
-    price: '$45',
-    location: 'City Center'
-  },
-  {
-    id: '2',
-    title: 'Hidden Gems Walking Tour',
-    description: 'Discover secret spots and local hideaways that most tourists never see.',
-    image: 'https://via.placeholder.com/400x300/FF5200/ffffff?text=Walking+Tour',
-    rating: 4.9,
-    price: '$35',
-    location: 'Historic District'
-  },
-  {
-    id: '3',
-    title: 'Sunset Culinary Experience',
-    description: 'Enjoy the best views while tasting exquisite local delicacies as the sun sets.',
-    image: 'https://via.placeholder.com/400x300/FFB980/ffffff?text=Sunset+Tour',
-    rating: 4.7,
-    price: '$65',
-    location: 'Waterfront Area'
-  },
-  {
-    id: '4',
-    title: 'Street Food Adventure',
-    description: 'Navigate the exciting world of street food with a knowledgeable local guide.',
-    image: 'https://via.placeholder.com/400x300/FF7E45/ffffff?text=Street+Food',
-    rating: 4.6,
-    price: '$30',
-    location: 'Market District'
-  },
-];
+type Itinerary = {
+  id: string;
+  title: string;
+  description: string;
+  places: {
+    name: string;
+    address: string;
+    image: string;
+    rating: number;
+  }[];
+};
 
 export default function TouristSpecialScreen() {
   const insets = useSafeAreaInsets();
-  
-  const renderTourCard = ({ item }: { item: TourExperience }) => (
-    <TouchableOpacity style={styles.tourCard}>
-      <Image source={{ uri: item.image }} style={styles.tourImage} />
-      <View style={styles.tourBadge}>
-        <Text style={styles.tourBadgeText}>{item.price}</Text>
-      </View>
-      <View style={styles.tourCardContent}>
-        <Text style={styles.tourTitle}>{item.title}</Text>
-        <Text style={styles.tourDescription}>{item.description}</Text>
-        <View style={styles.tourDetails}>
-          <View style={styles.tourRating}>
-            <MaterialIcons name="star" size={16} color="#FFD700" />
-            <Text style={styles.ratingText}>{item.rating}</Text>
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [itineraries, setItineraries] = useState<Itinerary[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch user's location
+  useEffect(() => {
+    const fetchLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          console.error('Permission to access location was denied');
+          return;
+        }
+        const currentLocation = await Location.getCurrentPositionAsync({});
+        setLocation({
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+        });
+      } catch (error) {
+        console.error('Error fetching location:', error);
+      }
+    };
+    fetchLocation();
+  }, []);
+
+  // Generate itineraries using the helper function
+  useEffect(() => {
+    if (!location) return;
+
+    const generatePersonalizedItineraries = async () => {
+      setLoading(true);
+      try {
+        // Call the helper function to generate itineraries
+        const generatedItineraries = await generateItineraries(
+          location.latitude,
+          location.longitude,
+          ['food', 'local culture', 'tourist attractions'],
+          5 // Number of itineraries to generate
+        );
+
+        // Update state with the generated itineraries
+        setItineraries(generatedItineraries);
+      } catch (error) {
+        console.error('Error generating itineraries:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    generatePersonalizedItineraries();
+  }, [location]);
+
+  const renderItineraryCard = ({ item }: { item: Itinerary }) => (
+    <View style={styles.itineraryCard}>
+      <Text style={styles.itineraryTitle}>{item.title}</Text>
+      <Text style={styles.itineraryDescription}>{item.description}</Text>
+      <FlatList
+        data={item.places}
+        renderItem={({ item: place }) => (
+          <View style={styles.placeItem}>
+            <Image source={{ uri: place.image }} style={styles.placeImage} />
+            <View style={styles.placeDetails}>
+              <Text style={styles.placeName}>{place.name}</Text>
+              <Text style={styles.placeAddress}>{place.address}</Text>
+              <View style={styles.placeRating}>
+                <MaterialIcons name="star" size={14} color="#FFD700" />
+                <Text style={styles.placeRatingText}>{place.rating}</Text>
+              </View>
+            </View>
           </View>
-          <View style={styles.tourLocation}>
-            <MaterialIcons name="place" size={16} color="#FF5200" />
-            <Text style={styles.locationText}>{item.location}</Text>
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
+        )}
+        keyExtractor={(place) => place.name}
+        contentContainerStyle={styles.placesList}
+      />
+    </View>
   );
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF5200" />
+        <Text style={styles.loadingText}>Generating your itineraries...</Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
@@ -116,21 +163,18 @@ export default function TouristSpecialScreen() {
           </View>
           <Text style={styles.categoryText}>Food</Text>
         </TouchableOpacity>
-        
         <TouchableOpacity style={styles.categoryButton}>
           <View style={styles.categoryIcon}>
             <FontAwesome5 name="walking" size={18} color="#FF5200" />
           </View>
           <Text style={styles.categoryText}>Walking</Text>
         </TouchableOpacity>
-        
         <TouchableOpacity style={styles.categoryButton}>
           <View style={styles.categoryIcon}>
             <FontAwesome5 name="camera" size={18} color="#FF5200" />
           </View>
           <Text style={styles.categoryText}>Photo</Text>
         </TouchableOpacity>
-        
         <TouchableOpacity style={styles.categoryButton}>
           <View style={styles.categoryIcon}>
             <FontAwesome5 name="glass-cheers" size={18} color="#FF5200" />
@@ -139,15 +183,15 @@ export default function TouristSpecialScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Tour Experiences */}
-      <View style={styles.toursSection}>
-        <Text style={styles.sectionTitle}>Recommended Experiences</Text>
+      {/* Itineraries Section */}
+      <View style={styles.itinerariesSection}>
+        <Text style={styles.sectionTitle}>Your Personalized Itineraries</Text>
         <FlatList
-          data={demoTours}
-          renderItem={renderTourCard}
-          keyExtractor={item => item.id}
+          data={itineraries}
+          renderItem={renderItineraryCard}
+          keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.toursList}
+          contentContainerStyle={styles.itinerariesList}
         />
       </View>
     </SafeAreaView>
@@ -158,6 +202,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f8f8',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#FF5200',
   },
   header: {
     flexDirection: 'row',
@@ -246,7 +301,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#444',
   },
-  toursSection: {
+  itinerariesSection: {
     flex: 1,
     paddingHorizontal: 16,
   },
@@ -256,13 +311,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     color: '#333',
   },
-  toursList: {
+  itinerariesList: {
     paddingBottom: 80, // Extra space for the tab bar
   },
-  tourCard: {
+  itineraryCard: {
     backgroundColor: 'white',
     borderRadius: 16,
-    overflow: 'hidden',
+    padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -270,59 +325,53 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  tourImage: {
-    width: '100%',
-    height: 150,
-    resizeMode: 'cover',
-  },
-  tourBadge: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    backgroundColor: '#FF5200',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-  },
-  tourBadgeText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  tourCardContent: {
-    padding: 16,
-  },
-  tourTitle: {
+  itineraryTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
     color: '#333',
   },
-  tourDescription: {
+  itineraryDescription: {
     fontSize: 14,
     color: '#666',
     marginBottom: 12,
     lineHeight: 20,
   },
-  tourDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  placesList: {
+    gap: 12,
   },
-  tourRating: {
+  placeItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 12,
   },
-  ratingText: {
-    marginLeft: 4,
+  placeImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  placeDetails: {
+    flex: 1,
+  },
+  placeName: {
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#444',
+    color: '#333',
+    marginBottom: 4,
   },
-  tourLocation: {
+  placeAddress: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
+  },
+  placeRating: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  locationText: {
+  placeRatingText: {
     marginLeft: 4,
-    color: '#666',
+    color: '#FFD700',
+    fontWeight: 'bold',
   },
 });
