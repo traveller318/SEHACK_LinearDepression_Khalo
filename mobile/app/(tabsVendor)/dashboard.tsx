@@ -48,6 +48,16 @@ interface Stall {
 }
 
 export default function VendorDashboard() {
+  const [hygieneReportData, setHygieneReportData] = useState<{
+    cleanliness_rating: number
+    good_practices: string[]
+    issues_found: string[]
+    recommendations: string[]
+    overall_summary: string
+  } | null>(null)
+  const [reportLoading, setReportLoading] = useState(false)
+  const [selectedStallId, setSelectedStallId] = useState<string | null>(null)
+
   const { user } = useAuth()
   const router = useRouter()
   const [vendorProfile, setVendorProfile] = useState<any>(null)
@@ -317,7 +327,44 @@ export default function VendorDashboard() {
         cuisine,
       })
 
-      // Create stall with Supabase - only sending required fields
+      // Get cleanliness report from Flask API
+      let hygieneScore = 0
+      try {
+        // Assuming user.phone is available in the user object, otherwise you'll need to fetch it
+        const phoneNumber = user.user_metadata?.phone || '+919326445840' // Use fallback if not available
+
+        console.log('Fetching hygiene report for phone:', phoneNumber)
+        const response = await fetch(
+          `https://cce4-103-124-122-210.ngrok-free.app/generate_report?vendor_number=+919326445840`
+        )
+
+        if (response.ok) {
+          const reportData = await response.json()
+          console.log('Received hygiene report:', reportData)
+
+          // Extract cleanliness rating from the response
+          hygieneScore = reportData.cleanliness_rating || 0
+
+          // You can save other report data if needed
+          const goodPractices = reportData.good_practices || []
+          const issuesFound = reportData.issues_found || []
+          const recommendations = reportData.recommendations || []
+          const overallSummary = reportData.overall_summary || ''
+
+          console.log(`Hygiene score from report: ${hygieneScore}`)
+        } else {
+          console.error(
+            'Failed to fetch hygiene report:',
+            response.status,
+            response.statusText
+          )
+        }
+      } catch (reportError) {
+        console.error('Error fetching hygiene report:', reportError)
+        // Continue with stall creation even if report fetch fails
+      }
+
+      // Create stall with Supabase - now including hygiene_score
       const { data: stallData, error: stallError } = await supabase
         .from('stalls')
         .insert({
@@ -327,6 +374,8 @@ export default function VendorDashboard() {
           location: `POINT(${stallLocation.longitude} ${stallLocation.latitude})`, // PostgreSQL geography format
           // Use the first image as the main stall image
           image_url: stallImages.length > 0 ? stallImages[0].uri : null,
+          // Add hygiene score from the report
+          hygiene_score: hygieneScore,
         })
         .select()
 
