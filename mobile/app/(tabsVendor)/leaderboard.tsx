@@ -21,17 +21,18 @@ export default function VendorLeaderboard() {
       
       // Mock data for demonstration
       const mockUsers = [
-        { id: 1, name: 'Lena McCall', score: 5255, image: 'https://randomuser.me/api/portraits/women/44.jpg' },
-        { id: 2, name: 'Leia Johnson', score: 4155, image: 'https://randomuser.me/api/portraits/women/68.jpg' },
-        { id: 3, name: 'Tom Edwards', score: 3255, image: 'https://randomuser.me/api/portraits/men/42.jpg' },
-        { id: 4, name: 'Dora Anderson', score: 2255, image: 'https://randomuser.me/api/portraits/women/65.jpg' },
-        { id: 5, name: 'Kayla Horne', score: 1000, image: 'https://randomuser.me/api/portraits/women/58.jpg' },
-        { id: 6, name: 'Sondra Himes', score: 589, image: 'https://randomuser.me/api/portraits/women/54.jpg' },
-        { id: 7, name: 'Loren Mirales', score: 281, image: 'https://randomuser.me/api/portraits/men/32.jpg' },
-        { id: 8, name: 'David Kim', score: 180, image: 'https://randomuser.me/api/portraits/men/11.jpg' },
-        { id: 9, name: 'Sarah Wright', score: 120, image: 'https://randomuser.me/api/portraits/women/90.jpg' },
-        { id: 10, name: 'James Fletcher', score: 75, image: 'https://randomuser.me/api/portraits/men/67.jpg' },
+        { id: 1, name: 'Aarav Sharma', score: 5255, image: 'https://randomuser.me/api/portraits/men/44.jpg' },
+        { id: 2, name: 'Ananya Patel', score: 4155, image: 'https://randomuser.me/api/portraits/women/68.jpg' },
+        { id: 3, name: 'Rohan Mehta', score: 3255, image: 'https://randomuser.me/api/portraits/men/42.jpg' },
+        { id: 4, name: 'Diya Iyer', score: 2255, image: 'https://randomuser.me/api/portraits/women/65.jpg' },
+        { id: 5, name: 'Kavya Nair', score: 1000, image: 'https://randomuser.me/api/portraits/women/58.jpg' },
+        { id: 6, name: 'Sneha Reddy', score: 589, image: 'https://randomuser.me/api/portraits/women/54.jpg' },
+        { id: 7, name: 'Manav Joshi', score: 281, image: 'https://randomuser.me/api/portraits/men/32.jpg' },
+        { id: 8, name: 'Devansh Kapoor', score: 180, image: 'https://randomuser.me/api/portraits/men/11.jpg' },
+        { id: 9, name: 'Ishita Desai', score: 120, image: 'https://randomuser.me/api/portraits/women/90.jpg' },
+        { id: 10, name: 'Arjun Verma', score: 75, image: 'https://randomuser.me/api/portraits/men/67.jpg' },
       ];
+      
       
       // Sort users by score in descending order
       const sortedUsers = [...mockUsers].sort((a, b) => b.score - a.score);
