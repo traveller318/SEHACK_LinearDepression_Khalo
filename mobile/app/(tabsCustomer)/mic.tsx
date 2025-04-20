@@ -9,19 +9,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 const STALLS_DATA = [
   {
     id: '1',
-    name: 'Tian Tian Chicken Rice',
-    image: 'https://images.unsplash.com/photo-1569058242567-93de6f36f8eb?q=80&w=2070',
-    description: 'Famous for their Hainanese chicken rice',
-    location: 'Maxwell Food Centre',
-    cuisine: 'Chinese',
-    distance: '0.5 km',
-    deliveryTime: '15-20 min',
-    rating: 4.5,
-    hygieneScore: 'A',
-    verified: true,
-  },
-  {
-    id: '2',
     name: 'Da Paolo Ristorante',
     image: 'https://images.unsplash.com/photo-1546549032-9571cd6b27df?q=80&w=2070',
     description: 'Authentic Italian pastas and wood-fired pizzas',
@@ -34,7 +21,7 @@ const STALLS_DATA = [
     verified: true,
   },
   {
-    id: '3',
+    id: '2',
     name: 'Szechuan Paradise',
     image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?q=80&w=2129',
     description: 'Spicy Szechuan dishes and hotpot specialties',
@@ -47,7 +34,7 @@ const STALLS_DATA = [
     verified: true,
   },
   {
-    id: '4',
+    id: '3',
     name: 'Pasta Fresca',
     image: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=2032',
     description: 'Handmade pasta and traditional Italian recipes',
@@ -60,9 +47,9 @@ const STALLS_DATA = [
     verified: true,
   },
   {
-    id: '5',
+    id: '4',
     name: 'Dim Sum Palace',
-    image: 'https://images.unsplash.com/photo-1566426795525-1e3a5d3b6402?q=80&w=2070',
+    image: 'https://cdn.cnn.com/cnnnext/dam/assets/160325033254-hk-dim-sum-fook-lam-moon.jpg',
     description: 'Wide variety of dim sum and Cantonese specialties',
     location: 'Chinatown',
     cuisine: 'Chinese',

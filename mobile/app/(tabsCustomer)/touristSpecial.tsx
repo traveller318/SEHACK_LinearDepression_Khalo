@@ -99,7 +99,7 @@ export default function TouristSpecialScreen() {
           id: 'vp1',
           name: 'Ashok Vada Pav',
           description: 'The original vada pav spot since 1971',
-          image: 'https://images.unsplash.com/photo-1606491956689-2ea866880c84?ixlib=rb-4.0.3',
+          image: 'https://news24online.com/wp-content/uploads/2023/01/Vada-Pav.jpg',
           price: '₹15-20',
           hygiene: 4,
           latitude: 19.0176,
@@ -109,7 +109,7 @@ export default function TouristSpecialScreen() {
           id: 'vp2',
           name: 'Anand Vada Pav',
           description: 'Known for extra spicy garlic chutney',
-          image: 'https://images.unsplash.com/photo-1606491956689-2ea866880c84?ixlib=rb-4.0.3',
+          image: 'https://wallpapercave.com/wp/wp8981219.jpg',
           price: '₹20-25',
           hygiene: 4.5,
           latitude: 19.0223,
@@ -119,7 +119,7 @@ export default function TouristSpecialScreen() {
           id: 'vp3',
           name: 'Shivaji Vada Pav',
           description: 'Celebrity favorite with secret recipe',
-          image: 'https://images.unsplash.com/photo-1606491956689-2ea866880c84?ixlib=rb-4.0.3',
+          image: 'https://c.ndtvimg.com/2023-08/q0sn8oeo_vada-pav_625x300_25_August_23.jpg?im=FeatureCrop,algorithm=dnn,width=1200,height=675',
           price: '₹25-30',
           hygiene: 4,
           latitude: 19.0348,
@@ -137,7 +137,7 @@ export default function TouristSpecialScreen() {
           id: 'ch1',
           name: 'Juhu Beach Chaat',
           description: 'Beachside pani puri and bhel',
-          image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?ixlib=rb-4.0.3',
+          image: 'https://www.archanaskitchen.com/images/archanaskitchen/1-Author/sneha-archanaskitchen.com/Sweet__Spicy_Pineapple_Pani_Puri_Recipe_.jpg',
           price: '₹50-80',
           hygiene: 3.5,
           latitude: 19.0883,
@@ -147,7 +147,7 @@ export default function TouristSpecialScreen() {
           id: 'ch2',
           name: 'Elco Market',
           description: 'Premium chaat since 1975',
-          image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?ixlib=rb-4.0.3',
+          image: 'https://tse3.mm.bing.net/th?id=OIP.ONMqtsJ_sim9k6DiGFHi8QHaE8&pid=Api&P=0&h=180',
           price: '₹100-150',
           hygiene: 4.5,
           latitude: 19.0699,
@@ -157,7 +157,7 @@ export default function TouristSpecialScreen() {
           id: 'ch3',
           name: 'Bandra Chaat Corner',
           description: 'Fusion chaat with modern twist',
-          image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?ixlib=rb-4.0.3',
+          image: 'https://tse3.mm.bing.net/th?id=OIP.cHarsWSdDEwGtCnQcFMEQQHaEo&pid=Api&P=0&h=180',
           price: '₹80-120',
           hygiene: 4,
           latitude: 19.0596,
@@ -175,7 +175,7 @@ export default function TouristSpecialScreen() {
           id: 'sb1',
           name: 'Kyani & Co.',
           description: 'Mumbai\'s oldest Irani cafe (1904)',
-          image: 'https://images.unsplash.com/photo-1576941089067-2de3c901e126?ixlib=rb-4.0.3',
+          image: 'https://sugarspicenice.in/wp-content/uploads/2018/10/1540927264031-1024x787.jpg',
           price: '₹60-100',
           hygiene: 4,
           latitude: 18.9432,
@@ -185,7 +185,7 @@ export default function TouristSpecialScreen() {
           id: 'sb2',
           name: 'Cannon Pav Bhaji',
           description: 'Legendary pav bhaji near CST',
-          image: 'https://images.unsplash.com/photo-1576941089067-2de3c901e126?ixlib=rb-4.0.3',
+          image: 'https://in.images.search.yahoo.com/images/view;_ylt=AwrPrtF0jQRoCrohxCy9HAx.;_ylu=c2VjA3NyBHNsawNpbWcEb2lkAzYyMzdhMmI0NWQ3Y2NiYzllZjY4OGMzZDg4ZTk1Y2E5BGdwb3MDMwRpdANiaW5n?back=https%3A%2F%2Fin.images.search.yahoo.com%2Fsearch%2Fimages%3Fp%3Dpav%2Bbhaji%26ei%3DUTF-8%26type%3DE210IN885G0%26fr%3Dmcafee%26fr2%3Dp%253As%252Cv%253Ai%252Cm%253Asb-top%26tab%3Dorganic%26ri%3D3&w=3264&h=2450&imgurl=hebbarskitchen.com%2Fwp-content%2Fuploads%2FmainPhotos%2Fpav-bhaji-recipe-easy-mumbai-style-pav-bhaji-recipe-2.jpeg&rurl=https%3A%2F%2Fhebbarskitchen.com%2Feasy-mumbai-style-pav-bhaji-recipe%2F&size=407KB&p=pav+bhaji&oid=6237a2b45d7ccbc9ef688c3d88e95ca9&fr2=p%3As%2Cv%3Ai%2Cm%3Asb-top&fr=mcafee&tt=Pav+Bhaji+Recipe+%7C+Easy+Mumbai+Street+Style+Pav+Bhaji+Recipe&b=0&ni=120&no=3&ts=&tab=organic&sigr=nhU.plsM9lQt&sigb=vS0.sPwB8Wes&sigi=N7AzR4.IUjyc&sigt=vd1ItFUJRkic&.crumb=rTG9HR44hxQ&fr=mcafee&fr2=p%3As%2Cv%3Ai%2Cm%3Asb-top&type=E210IN885G0',
           price: '₹120-150',
           hygiene: 3.5,
           latitude: 18.9398,
@@ -195,7 +195,7 @@ export default function TouristSpecialScreen() {
           id: 'sb3',
           name: 'Bademiya',
           description: 'Late night kebabs since 1946',
-          image: 'https://images.unsplash.com/photo-1576941089067-2de3c901e126?ixlib=rb-4.0.3',
+          image: 'https://www.thespruceeats.com/thmb/3aS-MqMydQjW1n7RBGWNVYQagIo=/4494x3000/filters:fill(auto,1)/basic-turkish-chicken-kebab-3274263_19-5b4ce87746e0fb00370a5025.jpg',
           price: '₹200-500',
           hygiene: 4,
           latitude: 18.9263,
@@ -725,7 +725,7 @@ export default function TouristSpecialScreen() {
             </View>
           </LinearGradient>
           <Image
-            source={{ uri: 'https://via.placeholder.com/800x400/FF5200/ffffff?text=Featured+Tour' }}
+            source={{ uri: 'https://www.mashed.com/img/gallery/exclusive-food-tour-of-disneys-art-themed-food-festival/l-intro-1643050969.jpg' }}
             style={styles.bannerImage}
           />
         </TouchableOpacity>

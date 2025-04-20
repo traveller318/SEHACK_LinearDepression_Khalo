@@ -4,43 +4,100 @@ import axios from 'axios';
 const MOCK_ITINERARIES = [
     {
         id: '1',
-        title: 'Morning Food Tour in Chinatown',
-        description: 'Start your day with local delicacies in Chinatown.',
+        title: 'Global Street Food Fiesta',
+        description: 'A taste of the world, all in one tour.',
         places: [
             {
-                name: 'Tian Tian Chicken Rice',
-                address: 'Maxwell Food Centre',
-                image: 'https://images.unsplash.com/photo-1569058242567-93de6f36f8eb?q=80&w=2070',
-                rating: 4.5,
+                name: 'Ramen Street',
+                address: 'Tokyo Alley, Japan Town',
+                image: require("../assets/images/ramen.png")    ,
+                rating: 4.6,
             },
             {
-                name: 'Hill Street Fried Kway Teow',
-                address: 'Chinatown Complex',
-                image: 'https://images.unsplash.com/photo-1574484284002-952d92456975?q=80&w=1974',
-                rating: 4.2,
+                name: 'Authentic Shawarma House',
+                address: 'Middle Eastern Lane',
+                image: require("../assets/images/shawarma.png"),
+                rating: 4.4,
+            },
+            {
+                name: 'Little Italy Pasta Stop',
+                address: 'Pasta Plaza, Downtown',
+                image: require("../assets/images/pasta.png"),
+                rating: 4.7,
             },
         ],
     },
     {
         id: '2',
-        title: 'Cultural Walk in Little India',
-        description: 'Explore vibrant streets and enjoy authentic Indian cuisine.',
+        title: 'Sweet Tooth Trail',
+        description: 'Perfect for dessert lovers and cafe hoppers.',
         places: [
             {
-                name: 'Mr and Mrs Mohgan\'s Super Crispy Roti Prata',
-                address: 'Joo Chiat',
-                image: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?q=80&w=2071',
+                name: 'Baker’s Delight',
+                address: 'Sugar Street, Central',
+                image: require("../assets/images/bakery.png"),
+                rating: 4.5,
+            },
+            {
+                name: 'Ice Cream Carnival',
+                address: 'Frozen Lane, Sweet District',
+                image: require("../assets/images/icecream.png"),
+                rating: 4.8,
+            },
+            {
+                name: 'Pani Puri Paradise',
+                address: 'Spice Market Corner',
+                image: require("../assets/images/pani.png"),
+                rating: 4.3,
+            },
+        ],
+    },
+    {
+        id: '3',
+        title: 'On-the-Go Bites',
+        description: 'Quick eats from food trucks and stalls.',
+        places: [
+            {
+                name: 'Gourmet Food Truck',
+                address: 'Nomad Park',
+                image: require("../assets/images/foodtruck.png"),
+                rating: 4.4,
+            },
+            {
+                name: 'Sushi Stop',
+                address: 'Ocean Street Bites',
+                image: require("../assets/images/sushi.png"),
+                rating: 4.6,
+            },
+            {
+                name: 'Thali Time',
+                address: 'Curry Circle',
+                image: require("../assets/images/thali.png"),
+                rating: 4.5,
+            },
+        ],
+    },
+    {
+        id: '4',
+        title: 'Caffeine & Chill',
+        description: 'Relax with brews and bites.',
+        places: [
+            {
+                name: 'Brewer’s Café',
+                address: 'Bean Boulevard',
+                image: require("../assets/images/coffee.png"),
                 rating: 4.7,
             },
             {
-                name: 'Sri Veeramakaliamman Temple',
-                address: '141 Serangoon Rd',
-                image: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?q=80&w=2070',
+                name: 'Pastry & Brew',
+                address: 'Mocha Lane',
+                image: require("../assets/images/coffee.png"),
                 rating: 4.6,
             },
         ],
     },
 ];
+
 
 // Replace with your actual Gemini API key
 const GEMINI_API_KEY = 'AIzaSyAnckvGLv58t7RZdcadX1lZQS9G3FPmkt8';
