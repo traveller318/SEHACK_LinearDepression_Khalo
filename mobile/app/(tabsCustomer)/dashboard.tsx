@@ -32,22 +32,70 @@ import { checkIfProfileExists } from '../../lib/customerProfileHelpers'
 import { supabase } from '../../lib/supabase'
 
 interface NearbyStall {
-  name: string;
-  image: string;
-  image_url: string;
-  rating: number;
-  hygiene: number;
-  hygiene_score: number;
-  distance: string;
-  id?: string;
-  lat: number;
-  lng: number;
-  cuisine: string;
-  deliveryTime: string;
+  name: string
+  image: string
+  image_url: string
+  rating: number
+  hygiene: number
+  hygiene_score: number
+  distance: string
+  id?: string
+  lat: number
+  lng: number
+  cuisine: string
+  deliveryTime: string
+}
+
+interface MenuItemCardProps {
+  name: string
+  description: string
+  price: number
+  image: string
+  onPress?: () => void
+  id?: string
+}
+
+const MenuItemCard = ({
+  name,
+  description,
+  price,
+  image,
+  onPress,
+  id = '1',
+}: MenuItemCardProps) => {
+  const router = useRouter()
+  const handlePress = () => {
+    router.push(`/stalls/${id}`)
+  }
+
+  return (
+    <TouchableOpacity style={styles.stallCard} onPress={handlePress}>
+      <Image source={{ uri: image }} style={styles.stallImage} />
+      <View style={styles.stallOverlay}>
+        <View style={styles.stallBadge}>
+          <Text style={styles.stallBadgeText}>Recommended</Text>
+        </View>
+      </View>
+      <View style={styles.stallInfo}>
+        <Text style={styles.stallName} numberOfLines={1}>
+          {name}
+        </Text>
+        <Text style={styles.ratingLabel} numberOfLines={2}>
+          {description}
+        </Text>
+        <View style={styles.ratingItem}>
+          <MaterialIcons name="attach-money" size={16} color="#4CAF50" />
+          <Text style={styles.ratingText}>{price.toFixed(0)}</Text>
+          <Text style={styles.ratingLabel}>Price</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  )
 }
 
 export default function DashboardScreen() {
   const { user } = useAuth()
+  const [keywordStalls, setKeywordStalls] = useState([])
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { height } = Dimensions.get('window')
@@ -138,15 +186,22 @@ export default function DashboardScreen() {
         // Transform the data to match VerticalStallCardProps
         const transformedData = data.map((stall: any) => ({
           name: stall.name || '',
-          image_url: stall.image_url || `https://via.placeholder.com/150/ffffff/000000?text=${stall.name?.split(' ').map((s: string) => s[0]).join('') || 'S'}`,
+          image_url:
+            stall.image_url ||
+            `https://via.placeholder.com/150/ffffff/000000?text=${
+              stall.name
+                ?.split(' ')
+                .map((s: string) => s[0])
+                .join('') || 'S'
+            }`,
           cuisine: stall.cuisine || 'Various',
           distance: stall.distance || '0 km',
           deliveryTime: stall.deliveryTime || '15-30 min',
           rating: stall.rating || 0,
           hygiene_score: stall.hygiene_score || 0,
           verified: stall.verified || false,
-          _id: stall._id || stall.id || '1'
-        }));
+          _id: stall._id || stall.id || '1',
+        }))
 
         setAllStalls(transformedData)
       } catch (error) {
@@ -181,6 +236,31 @@ export default function DashboardScreen() {
       checkUserProfile()
     }
   }, [user])
+
+  useEffect(() => {
+    const fetchKeywordStalls = async () => {
+      try {
+        const keywordArray = ['chinese', 'veg'] // hardcoded keywords
+
+        const response = await fetch(
+          'https://khalo-r5v5.onrender.com/customer/getKeywordStalls',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ keywords: keywordArray }),
+          }
+        )
+        const data = await response.json()
+        setKeywordStalls(data)
+      } catch (error) {
+        console.error('Error fetching keyword stalls:', error)
+      }
+    }
+
+    fetchKeywordStalls()
+  }, []) // empty dependency array to run only once on mount
 
   useEffect(() => {
     ;(async () => {
@@ -484,6 +564,31 @@ export default function DashboardScreen() {
           </ScrollView>
 
           {/* Popular Stalls */}
+          {/* Recommended Dishes Based on Keywords */}
+          {/* Recommended Dishes Based on Keywords */}
+          <Text style={styles.categoriesTitle}>Recommended dishes</Text>
+          {keywordStalls.length > 0 && (
+            <>
+              <Text style={styles.sectionTitle}>Recommended Dishes</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.recommendationsContainer}
+              >
+                {keywordStalls.map((item: any) => (
+                  <MenuItemCard
+                    key={item.id}
+                    name={item.name}
+                    description={item.description}
+                    price={item.price}
+                    image={item.image_url}
+                    id={item.id}
+                  />
+                ))}
+              </ScrollView>
+            </>
+          )}
+
           <Text style={styles.categoriesTitle}>Popular Stalls</Text>
           <ScrollView
             horizontal
@@ -862,15 +967,15 @@ const FilterTag = ({ icon, name, active = false, onPress }: FilterTagProps) => (
 
 // New Vertical Stall Card Component
 interface VerticalStallCardProps {
-  name: string;
-  image_url?: string;
-  cuisine: string;
-  distance: string;
-  deliveryTime: string;
-  rating: number;
-  hygiene_score: number;
-  verified?: boolean;
-  _id?: string;
+  name: string
+  image_url?: string
+  cuisine: string
+  distance: string
+  deliveryTime: string
+  rating: number
+  hygiene_score: number
+  verified?: boolean
+  _id?: string
 }
 
 const VerticalStallCard = ({
@@ -893,76 +998,76 @@ const VerticalStallCard = ({
   }
 
   return (
-  <TouchableOpacity style={styles.verticalStallCard} onPress={handlePress}>
-    <View style={styles.verticalStallContent}>
-      <View style={styles.verticalStallImageContainer}>
-        <Image
-          source={{
-            uri:
-              image_url ||
-              `https://via.placeholder.com/150/ffffff/000000?text=${name
-                .split(' ')
-                .map((s) => s[0])
-                .join('')}`,
-          }}
-          style={styles.verticalStallImage}
-        />
-      </View>
-      <View style={styles.verticalStallInfo}>
-        <View style={styles.verticalStallHeader}>
-          <Text style={styles.verticalStallName}>{name}</Text>
-          {verified && (
-            <View style={styles.verifiedBadge}>
-              <MaterialIcons name="verified" size={16} color="#4CAF50" />
+    <TouchableOpacity style={styles.verticalStallCard} onPress={handlePress}>
+      <View style={styles.verticalStallContent}>
+        <View style={styles.verticalStallImageContainer}>
+          <Image
+            source={{
+              uri:
+                image_url ||
+                `https://via.placeholder.com/150/ffffff/000000?text=${name
+                  .split(' ')
+                  .map((s) => s[0])
+                  .join('')}`,
+            }}
+            style={styles.verticalStallImage}
+          />
+        </View>
+        <View style={styles.verticalStallInfo}>
+          <View style={styles.verticalStallHeader}>
+            <Text style={styles.verticalStallName}>{name}</Text>
+            {verified && (
+              <View style={styles.verifiedBadge}>
+                <MaterialIcons name="verified" size={16} color="#4CAF50" />
+              </View>
+            )}
+          </View>
+          <Text style={styles.verticalStallCuisine}>{cuisine}</Text>
+          <View style={styles.verticalStallDetails}>
+            <View style={styles.verticalStallDetail}>
+              <MaterialIcons name="place" size={14} color="#666" />
+              <Text style={styles.verticalStallDetailText}>{distance}</Text>
             </View>
-          )}
-        </View>
-        <Text style={styles.verticalStallCuisine}>{cuisine}</Text>
-        <View style={styles.verticalStallDetails}>
-          <View style={styles.verticalStallDetail}>
-            <MaterialIcons name="place" size={14} color="#666" />
-            <Text style={styles.verticalStallDetailText}>{distance}</Text>
-          </View>
-          <View style={styles.verticalStallDetail}>
-            <MaterialIcons name="access-time" size={14} color="#666" />
-            <Text style={styles.verticalStallDetailText}>{deliveryTime}</Text>
-          </View>
-        </View>
-        <View style={styles.verticalStallRatings}>
-          <View style={styles.verticalStallRating}>
-            <MaterialIcons name="star" size={16} color="#FFD700" />
-            <Text style={styles.verticalStallRatingText}>{rating}</Text>
-          </View>
-          <View style={styles.verticalStallHygiene}>
-            <MaterialCommunityIcons
-              name="silverware-clean"
-              size={16}
-              color="#4CAF50"
-            />
-            <View style={styles.hygieneStars}>
-              {Array(5)
-                .fill(0)
-                .map((_, i) => (
-                  <MaterialIcons
-                    key={i}
-                    name="star"
-                    size={12}
-                    color={i < (hygiene_score || 0) ? '#4CAF50' : '#e0e0e0'}
-                    style={{ marginRight: 2 }}
-                  />
-                ))}
+            <View style={styles.verticalStallDetail}>
+              <MaterialIcons name="access-time" size={14} color="#666" />
+              <Text style={styles.verticalStallDetailText}>{deliveryTime}</Text>
             </View>
           </View>
+          <View style={styles.verticalStallRatings}>
+            <View style={styles.verticalStallRating}>
+              <MaterialIcons name="star" size={16} color="#FFD700" />
+              <Text style={styles.verticalStallRatingText}>{rating}</Text>
+            </View>
+            <View style={styles.verticalStallHygiene}>
+              <MaterialCommunityIcons
+                name="silverware-clean"
+                size={16}
+                color="#4CAF50"
+              />
+              <View style={styles.hygieneStars}>
+                {Array(5)
+                  .fill(0)
+                  .map((_, i) => (
+                    <MaterialIcons
+                      key={i}
+                      name="star"
+                      size={12}
+                      color={i < (hygiene_score || 0) ? '#4CAF50' : '#e0e0e0'}
+                      style={{ marginRight: 2 }}
+                    />
+                  ))}
+              </View>
+            </View>
+          </View>
         </View>
       </View>
-    </View>
-    <MaterialIcons
-      name="chevron-right"
-      size={24}
-      color="#999"
-      style={styles.verticalStallArrow}
-    />
-  </TouchableOpacity>
+      <MaterialIcons
+        name="chevron-right"
+        size={24}
+        color="#999"
+        style={styles.verticalStallArrow}
+      />
+    </TouchableOpacity>
   )
 }
 
@@ -1127,6 +1232,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     marginTop: 16,
+  },
+  recommendationsContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   promoButton: {
     alignItems: 'center',

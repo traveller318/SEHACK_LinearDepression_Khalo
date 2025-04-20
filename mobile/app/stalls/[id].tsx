@@ -22,7 +22,7 @@ import {
 } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-
+// import { ActivityIndicator } from 'react-native'
 const { width } = Dimensions.get('window')
 import {
   getStallReview,
@@ -795,6 +795,61 @@ const styles = StyleSheet.create({
   menuList: {
     paddingBottom: 20,
   },
+  summaryContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  summaryTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+  },
+  loadingIndicator: {
+    marginVertical: 10,
+  },
+  summaryBox: {
+    flexDirection: 'row',
+    backgroundColor: '#F9F9F9',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10,
+  },
+  summaryIcon: {
+    marginRight: 10,
+    marginTop: 2,
+  },
+  summaryText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#444',
+  },
+  ratingAlertBox: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF8E1',
+    borderRadius: 8,
+    padding: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9800',
+  },
+  ratingAlertIcon: {
+    marginRight: 10,
+    marginTop: 2,
+  },
+  ratingAlertText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#333',
+  },
 })
 
 const StallPage = () => {
@@ -851,6 +906,9 @@ const StallPage = () => {
     },
   ])
   const { id } = useLocalSearchParams<{ id: string }>()
+  const [summary, setSummary] = useState('')
+  const [rating, setRating] = useState('')
+  const [ratingScore, setRatingScore] = useState(0)
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const scrollY = useRef(new Animated.Value(0)).current
@@ -942,6 +1000,127 @@ const StallPage = () => {
     }
     fetchReviews()
   }, [id])
+  const FLASK_ENDPOINT = `https://cce4-103-124-122-210.ngrok-free.app/analyze/${id}`
+  const GEMINI_API_KEY = 'AIzaSyBHCKPaZNHcgEic4J8lr_rtRC6zhdaB2Zk' // replace with actual key
+
+  useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        // Step 1: Fetch from Flask
+        const flaskRes = await fetch(FLASK_ENDPOINT)
+        const flaskData = await flaskRes.json()
+
+        const summaries = flaskData.review_summary.summaries.map(
+          (item: any) => item.summary
+        )
+        const joinedSummaries = summaries.join('\n\n')
+        setSummary(joinedSummaries)
+
+        // Extract average rating from Flask response
+        if (flaskData.review_summary.average_rating) {
+          setRatingScore(flaskData.review_summary.average_rating)
+        }
+
+        // Step 2: Send to Gemini (remaining code stays the same)
+        const geminiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    {
+                      text: `Given these review summaries:\n\n${joinedSummaries}\n\nCan you highlight any critical issues related to water quality, hygiene, or service problems? Keep it short.`,
+                    },
+                  ],
+                },
+              ],
+            }),
+          }
+        )
+
+        const geminiData = await geminiRes.json()
+        const criticalSummary =
+          geminiData.candidates?.[0]?.content?.parts?.[0]?.text || ''
+
+        setRating(criticalSummary.trim())
+      } catch (error) {
+        console.error('Error:', error)
+        setRating('Unable to fetch critical review.')
+        setSummary('Could not load review summaries.')
+      }
+    }
+
+    if (id) fetchSummary()
+  }, [id])
+
+  const renderSummaryAndRating = () => {
+    return (
+      <View style={styles.summaryContainer}>
+        <Text style={styles.summaryTitle}>AI-Generated Review Summary</Text>
+
+        {isLoading ? (
+          <ActivityIndicator
+            size="small"
+            color="#FF5200"
+            style={styles.loadingIndicator}
+          />
+        ) : (
+          <>
+            {/* Add the numeric star rating display */}
+            {ratingScore > 0 && (
+              <View style={styles.averageRatingContainer}>
+                <Text style={styles.averageRatingValue}>
+                  {ratingScore.toFixed(1)}
+                </Text>
+                <View style={styles.averageRatingStars}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <MaterialIcons
+                      key={star}
+                      name="star"
+                      size={18}
+                      color={
+                        star <= Math.round(ratingScore) ? '#FFD700' : '#e0e0e0'
+                      }
+                    />
+                  ))}
+                </View>
+                <Text style={styles.averageRatingLabel}>Average Rating</Text>
+              </View>
+            )}
+
+            <View style={styles.summaryBox}>
+              <MaterialIcons
+                name="rate-review"
+                size={20}
+                color="#FF5200"
+                style={styles.summaryIcon}
+              />
+              <Text style={styles.summaryText}>
+                {summary || 'No review summary available'}
+              </Text>
+            </View>
+
+            {rating && (
+              <View style={styles.ratingAlertBox}>
+                <MaterialIcons
+                  name="warning"
+                  size={20}
+                  color="#FF9800"
+                  style={styles.ratingAlertIcon}
+                />
+                <Text style={styles.ratingAlertText}>{rating}</Text>
+              </View>
+            )}
+          </>
+        )}
+      </View>
+    )
+  }
   const renderImageCarousel = () => {
     return (
       <View style={styles.carouselContainer}>
@@ -1193,9 +1372,13 @@ const StallPage = () => {
     )
   }
 
+  // Add this component to the reviews tab
   const renderReviews = () => {
     return (
       <View style={styles.reviewsContainer}>
+        {/* Add the summary and rating component at the top */}
+        {renderSummaryAndRating()}
+
         <View style={styles.reviewHeader}>
           <Text style={styles.reviewHeaderText}>Customer Reviews</Text>
           <TouchableOpacity
@@ -1250,7 +1433,6 @@ const StallPage = () => {
       </View>
     )
   }
-
   const renderInfoTab = () => {
     return (
       <View style={styles.infoTabContainer}>

@@ -1,32 +1,56 @@
-import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, FlatList, Modal, TextInput, Alert, ActivityIndicator, ScrollView, Animated, Easing, Image, PanResponder } from 'react-native';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MaterialIcons, Ionicons, FontAwesome, AntDesign, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
-import { useAuth } from '../../contexts/AuthContext';
-import { LinearGradient } from 'expo-linear-gradient';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  SafeAreaView,
+  FlatList,
+  Modal,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+  ScrollView,
+  Animated,
+  Easing,
+  Image,
+  PanResponder,
+} from 'react-native'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import {
+  MaterialIcons,
+  Ionicons,
+  FontAwesome,
+  AntDesign,
+  Feather,
+  MaterialCommunityIcons,
+} from '@expo/vector-icons'
+import Slider from '@react-native-community/slider'
+import * as Location from 'expo-location'
+import { useAuth } from '../../contexts/AuthContext'
+import { LinearGradient } from 'expo-linear-gradient'
 
 type Comment = {
-  id: string;
-  user_name: string;
-  content: string;
-  created_at: string;
-};
+  id: string
+  user_name: string
+  content: string
+  created_at: string
+}
 
 type Post = {
-  id: string;
-  title: string;
-  content: string;
-  user_name?: string;
-  image_url?: string;
-  tags: string[];
-  created_at: string;
-  distance?: number;
-  upvotes?: number;
-  downvotes?: number;
-  userVote?: 'up' | 'down' | null;
-  comments?: Comment[];
-};
+  id: string
+  title: string
+  content: string
+  user_name?: string
+  image_url?: string
+  tags: string[]
+  created_at: string
+  distance?: number
+  upvotes?: number
+  downvotes?: number
+  userVote?: 'up' | 'down' | null
+  comments?: Comment[]
+}
 
 // Create a dedicated Post component to fix the hooks issue
 const PostItem = React.memo(({ item, index, handleVote, formatDate, toggleComments, showComments }: 
@@ -317,26 +341,31 @@ const PostItem = React.memo(({ item, index, handleVote, formatDate, toggleCommen
 });
 
 export default function CommunityScreen() {
-  const insets = useSafeAreaInsets();
-  const { user } = useAuth();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [radius, setRadius] = useState(2); // Default 2km radius
-  const [createPostVisible, setCreatePostVisible] = useState(false);
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [tagInput, setTagInput] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [error, setError] = useState('');
-  const [showComments, setShowComments] = useState<{[key: string]: boolean}>({});
-  const [activeCategory, setActiveCategory] = useState('Recent');
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.9)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  
+  const insets = useSafeAreaInsets()
+  const { user } = useAuth()
+  const [posts, setPosts] = useState<Post[]>([])
+  const [filteredPosts, setFilteredPosts] = useState<Post[]>([])
+  const [loading, setLoading] = useState(true)
+  const [location, setLocation] = useState<{
+    latitude: number
+    longitude: number
+  } | null>(null)
+  const [radius, setRadius] = useState(2) // Default 2km radius
+  const [createPostVisible, setCreatePostVisible] = useState(false)
+  const [title, setTitle] = useState('')
+  const [content, setContent] = useState('')
+  const [tagInput, setTagInput] = useState('')
+  const [tags, setTags] = useState<string[]>([])
+  const [error, setError] = useState('')
+  const [showComments, setShowComments] = useState<{ [key: string]: boolean }>(
+    {}
+  )
+  const [activeCategory, setActiveCategory] = useState('Recent')
+  const scrollY = useRef(new Animated.Value(0)).current
+  const fadeAnim = useRef(new Animated.Value(0)).current
+  const scaleAnim = useRef(new Animated.Value(0.9)).current
+  const pulseAnim = useRef(new Animated.Value(1)).current
+
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -351,10 +380,10 @@ export default function CommunityScreen() {
           duration: 1000,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
-        })
+        }),
       ])
-    ).start();
-  }, []);
+    ).start()
+  }, [])
 
   useEffect(() => {
     Animated.parallel([
@@ -368,9 +397,9 @@ export default function CommunityScreen() {
         duration: 600,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
-      })
-    ]).start();
-  }, []);
+      }),
+    ]).start()
+  }, [])
 
   useEffect(() => {
     (async () => {
@@ -417,11 +446,11 @@ export default function CommunityScreen() {
         // Load demo data for any unexpected error
         loadDemoData();
       }
-    })();
-  }, []);
+    })()
+  }, [])
 
   const fetchNearbyPosts = async (lat: number, lng: number, radius: number) => {
-    setLoading(true);
+    setLoading(true)
     try {
       // Add a timeout to the fetch to prevent it hanging forever
       const fetchPromise = fetch('https://khalo-r5v5.onrender.com/community/getNearbyPosts', {
@@ -463,103 +492,106 @@ export default function CommunityScreen() {
       // Load demo data if fetch fails
       loadDemoData();
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleRadiusChange = (value: number) => {
-    setRadius(value);
+    setRadius(value)
     if (location) {
-      fetchNearbyPosts(location.latitude, location.longitude, value);
+      fetchNearbyPosts(location.latitude, location.longitude, value)
     }
-  };
+  }
 
   const addTag = () => {
     if (tagInput.trim() !== '') {
       if (!tags.includes(tagInput.trim())) {
-        setTags([...tags, tagInput.trim()]);
+        setTags([...tags, tagInput.trim()])
       }
-      setTagInput('');
+      setTagInput('')
     }
-  };
+  }
 
   const removeTag = (index: number) => {
-    const newTags = [...tags];
-    newTags.splice(index, 1);
-    setTags(newTags);
-  };
+    const newTags = [...tags]
+    newTags.splice(index, 1)
+    setTags(newTags)
+  }
 
   const createPost = async () => {
     if (!title.trim()) {
-      Alert.alert('Error', 'Title is required');
-      return;
+      Alert.alert('Error', 'Title is required')
+      return
     }
 
     if (!location) {
-      Alert.alert('Error', 'Location is not available');
-      return;
+      Alert.alert('Error', 'Location is not available')
+      return
     }
 
     try {
-      const response = await fetch('https://khalo-r5v5.onrender.com/community/createPost', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: user?.id,
-          title: title.trim(),
-          content: content.trim(),
-          tags,
-          lat: location.latitude,
-          lng: location.longitude,
-        }),
-      });
+      const response = await fetch(
+        'https://khalo-r5v5.onrender.com/community/createPost',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: user?.id,
+            title: title.trim(),
+            content: content.trim(),
+            tags,
+            lat: location.latitude,
+            lng: location.longitude,
+          }),
+        }
+      )
 
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error('Network response was not ok')
       }
 
       // Reset form and close modal
-      setTitle('');
-      setContent('');
-      setTags([]);
-      setCreatePostVisible(false);
-      
+      setTitle('')
+      setContent('')
+      setTags([])
+      setCreatePostVisible(false)
+
       // Refresh posts
-      fetchNearbyPosts(location.latitude, location.longitude, radius);
-      
+      fetchNearbyPosts(location.latitude, location.longitude, radius)
     } catch (error) {
-      console.error('Error creating post:', error);
-      Alert.alert('Error', 'Failed to create post');
+      console.error('Error creating post:', error)
+      Alert.alert('Error', 'Failed to create post')
     }
-  };
+  }
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffHrs = diffMs / (1000 * 60 * 60);
-    
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffHrs = diffMs / (1000 * 60 * 60)
+
     if (diffHrs < 1) {
-      return `${Math.floor(diffHrs * 60)} min ago`;
+      return `${Math.floor(diffHrs * 60)} min ago`
     } else if (diffHrs < 24) {
-      return `${Math.floor(diffHrs)}h ago`;
+      return `${Math.floor(diffHrs)}h ago`
     } else {
-      return `${Math.floor(diffHrs / 24)}d ago`;
+      return `${Math.floor(diffHrs / 24)}d ago`
     }
-  };
+  }
 
   const handleVote = async (postId: string, voteType: 'up' | 'down') => {
     if (!user) {
-      Alert.alert('Error', 'You must be logged in to vote');
-      return;
+      Alert.alert('Error', 'You must be logged in to vote')
+      return
     }
 
-    const endpoint = voteType === 'up'
-      ? 'https://khalo-r5v5.onrender.com/community/upvotePost'
-      : 'https://khalo-r5v5.onrender.com/community/downvotePost';
-    
+    const endpoint =
+      voteType === 'up'
+        ? 'https://khalo-r5v5.onrender.com/community/upvotePost'
+        : 'https://khalo-r5v5.onrender.com/community/downvotePost'
+
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -570,64 +602,83 @@ export default function CommunityScreen() {
           // user_id: user.id,
           post_id: postId,
         }),
-      });
+      })
 
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error('Network response was not ok')
       }
 
       // Update posts locally to show the vote immediately
-      setPosts(prevPosts => 
-        prevPosts.map(post => {
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => {
           if (post.id === postId) {
             // If user already voted the same way, remove the vote
             if (post.userVote === voteType) {
               return {
                 ...post,
-                upvotes: voteType === 'up' ? (post.upvotes || 0) - 1 : (post.upvotes || 0),
-                downvotes: voteType === 'down' ? (post.downvotes || 0) - 1 : (post.downvotes || 0),
-                userVote: null
-              };
+                upvotes:
+                  voteType === 'up'
+                    ? (post.upvotes || 0) - 1
+                    : post.upvotes || 0,
+                downvotes:
+                  voteType === 'down'
+                    ? (post.downvotes || 0) - 1
+                    : post.downvotes || 0,
+                userVote: null,
+              }
             }
             // If user already voted the other way, switch the vote
             else if (post.userVote) {
               return {
                 ...post,
-                upvotes: voteType === 'up' 
-                  ? (post.upvotes || 0) + 1 
-                  : (post.upvotes || 0) - 1,
-                downvotes: voteType === 'down'
-                  ? (post.downvotes || 0) + 1
-                  : (post.downvotes || 0) - 1,
-                userVote: voteType
-              };
+                upvotes:
+                  voteType === 'up'
+                    ? (post.upvotes || 0) + 1
+                    : (post.upvotes || 0) - 1,
+                downvotes:
+                  voteType === 'down'
+                    ? (post.downvotes || 0) + 1
+                    : (post.downvotes || 0) - 1,
+                userVote: voteType,
+              }
             }
             // If user hasn't voted yet
             else {
               return {
                 ...post,
-                upvotes: voteType === 'up' ? (post.upvotes || 0) + 1 : (post.upvotes || 0),
-                downvotes: voteType === 'down' ? (post.downvotes || 0) + 1 : (post.downvotes || 0),
-                userVote: voteType
-              };
+                upvotes:
+                  voteType === 'up'
+                    ? (post.upvotes || 0) + 1
+                    : post.upvotes || 0,
+                downvotes:
+                  voteType === 'down'
+                    ? (post.downvotes || 0) + 1
+                    : post.downvotes || 0,
+                userVote: voteType,
+              }
             }
           }
-          return post;
+          return post
         })
-      );
-      
+      )
     } catch (error) {
-      console.error(`Error ${voteType === 'up' ? 'upvoting' : 'downvoting'} post:`, error);
-      Alert.alert('Error', `Failed to ${voteType === 'up' ? 'upvote' : 'downvote'} post`);
+      console.error(
+        `Error ${voteType === 'up' ? 'upvoting' : 'downvoting'} post:`,
+        error
+      )
+      Alert.alert(
+        'Error',
+        `Failed to ${voteType === 'up' ? 'upvote' : 'downvote'} post`
+      )
     }
-  };
+  }
 
   const toggleComments = (postId: string) => {
-    setShowComments(prev => ({
+    setShowComments((prev) => ({
       ...prev,
-      [postId]: !prev[postId]
-    }));
-  };
+      [postId]: !prev[postId],
+    }))
+  }
 
   // Add a function to load demo data
   const loadDemoData = () => {
@@ -715,19 +766,19 @@ export default function CommunityScreen() {
       // Add sample comments and ensure we have posts for each category
       const enhancedPosts = posts.map((post, index) => {
         // Add random upvotes and downvotes
-        const upvotes = post.upvotes || Math.floor(Math.random() * 30);
-        const downvotes = post.downvotes || Math.floor(Math.random() * 10);
-        
+        const upvotes = post.upvotes || Math.floor(Math.random() * 30)
+        const downvotes = post.downvotes || Math.floor(Math.random() * 10)
+
         // Add a category tag to some posts
-        let enhancedTags = [...(post.tags || [])];
+        let enhancedTags = [...(post.tags || [])]
         if (index % 5 === 0) {
-          enhancedTags.push('Important');
+          enhancedTags.push('Important')
         }
-        
+
         // Generate 2-3 comments for each post
-        const commentCount = 2 + Math.floor(Math.random() * 2);
-        const comments : any[] = [];
-        
+        const commentCount = 2 + Math.floor(Math.random() * 2)
+        const comments: any[] = []
+
         for (let i = 0; i < commentCount; i++) {
           comments.push({
             id: `comment${i}-${post.id}`,
@@ -739,60 +790,76 @@ export default function CommunityScreen() {
               'Has anyone else experienced this problem?',
               'Thanks for bringing this to our attention.',
               'I had a similar experience last week.',
-              'Would love to see more posts like this!'
+              'Would love to see more posts like this!',
             ][Math.floor(Math.random() * 7)],
-            created_at: new Date(Date.now() - Math.random() * 86400000 * 7).toISOString()
-          });
+            created_at: new Date(
+              Date.now() - Math.random() * 86400000 * 7
+            ).toISOString(),
+          })
         }
-        
+
         return {
           ...post,
           upvotes,
           downvotes,
           tags: enhancedTags,
-          comments
-        };
-      });
-      
-      setPosts(enhancedPosts);
+          comments,
+        }
+      })
+
+      setPosts(enhancedPosts)
     }
-  }, [posts.length, loading]);
+  }, [posts.length, loading])
 
   // Filter posts based on active category
   useEffect(() => {
     if (posts.length > 0) {
-      let filtered = [...posts];
-      
+      let filtered = [...posts]
+
       switch (activeCategory) {
         case 'Most Liked':
-          filtered.sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
-          break;
+          filtered.sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0))
+          break
         case 'Recent':
-          filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-          break;
+          filtered.sort(
+            (a, b) =>
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime()
+          )
+          break
         case 'Important':
-          filtered = filtered.filter(post => post.tags?.includes('Important') || post.tags?.includes('important'));
-          break;
+          filtered = filtered.filter(
+            (post) =>
+              post.tags?.includes('Important') ||
+              post.tags?.includes('important')
+          )
+          break
         case 'Others':
           // Show all posts but give lower priority to posts in other categories
-          const mostLiked = posts.sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0)).slice(0, 3);
-          const important = posts.filter(post => post.tags?.includes('Important') || post.tags?.includes('important'));
-          
-          // Remove duplicates
-          const otherPosts = posts.filter(post => 
-            !mostLiked.some(p => p.id === post.id) && 
-            !important.some(p => p.id === post.id)
-          );
-          
-          filtered = otherPosts;
-          break;
-      }
-      
-      setFilteredPosts(filtered);
-    }
-  }, [activeCategory, posts]);
+          const mostLiked = posts
+            .sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0))
+            .slice(0, 3)
+          const important = posts.filter(
+            (post) =>
+              post.tags?.includes('Important') ||
+              post.tags?.includes('important')
+          )
 
-  // Replace the renderPost function with this
+          // Remove duplicates
+          const otherPosts = posts.filter(
+            (post) =>
+              !mostLiked.some((p) => p.id === post.id) &&
+              !important.some((p) => p.id === post.id)
+          )
+
+          filtered = otherPosts
+          break
+      }
+
+      setFilteredPosts(filtered)
+    }
+  }, [activeCategory, posts])
+
   const renderPost = useCallback(({ item, index }: { item: Post; index: number }) => {
     return (
       <PostItem 
@@ -808,97 +875,87 @@ export default function CommunityScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Fixed header section - will not scroll */}
-      <View style={styles.fixedHeaderContainer}>
-        {/* Header with Animated Background */}
-        <Animated.View 
-          style={[
-            styles.header,
-            {
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }],
-            }
-          ]}
+      {/* Header with Animated Background */}
+      <Animated.View 
+        style={[
+          styles.header,
+          {
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }],
+          },
+        ]}
+      >
+        <LinearGradient
+          colors={['#FF8A5B', '#FF5200']}
+          start={[0, 0]}
+          end={[1, 0]}
+          style={styles.headerGradient}
         >
-          <LinearGradient
-            colors={['#FF8A5B', '#FF5200']}
-            start={[0, 0]}
-            end={[1, 0]}
-            style={styles.headerGradient}
-          >
-            <Text style={styles.headerTitle}>Community</Text>
-          </LinearGradient>
-        </Animated.View>
+          <Text style={styles.headerTitle}>Community</Text>
+        </LinearGradient>
+      </Animated.View>
 
-        {/* Replace Radius Selector with button-based design */}
-        <Animated.View 
-          style={[
-            styles.radiusContainer,
-            {
-              opacity: fadeAnim,
-              // Remove transform that was tied to scroll
-            }
-          ]}
-        >
-          <View style={styles.radiusLabelContainer}>
-            <MaterialIcons name="explore" size={20} color="#FF5200" />
-            <Text style={styles.radiusLabel}>Discovery Radius</Text>
-          </View>
-          
-          <View style={styles.radiusButtonsContainer}>
-            {[1, 2, 3, 5, 10].map((value) => (
-              <TouchableOpacity
-                key={value}
-                style={[
-                  styles.radiusButton,
-                  radius === value && styles.radiusButtonActive
-                ]}
-                onPress={() => handleRadiusChange(value)}
-              >
-                <Text 
-                  style={[
-                    styles.radiusButtonText,
-                    radius === value && styles.radiusButtonTextActive
-                  ]}
-                >
-                  {value} km
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </Animated.View>
-
-        {/* Category Tabs with improved UI */}
-        <View style={styles.categoryTabsContainer}>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoryTabs}
-          >
-            {['Recent', 'Most Liked', 'Important', 'Others'].map((category) => (
-              <TouchableOpacity
-                key={category}
-                style={[
-                  styles.categoryTab,
-                  activeCategory === category && styles.activeTab
-                ]}
-                onPress={() => setActiveCategory(category)}
-              >
-                <Text 
-                  style={[
-                    styles.categoryTabText,
-                    activeCategory === category && styles.activeTabText
-                  ]}
-                >
-                  {category}
-                </Text>
-                {activeCategory === category && (
-                  <View style={styles.activeTabIndicator} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+      {/* Radius Selector with improved UI */}
+      <Animated.View 
+        style={[
+          styles.radiusContainer,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: Animated.multiply(scrollY, 0.1) }],
+          },
+        ]}
+      >
+        <View style={styles.radiusLabelContainer}>
+          <MaterialIcons name="explore" size={20} color="#FF5200" />
+          <Text style={styles.radiusLabel}>Discovery Radius: {radius} km</Text>
         </View>
+        <Slider
+          style={{ width: '100%', height: 40 }}
+          minimumValue={1}
+          maximumValue={10}
+          step={1}
+          value={radius}
+          onValueChange={handleRadiusChange}
+          minimumTrackTintColor="#FF5200"
+          maximumTrackTintColor="#FFDED0"
+          thumbTintColor="#FF5200"
+        />
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: -8 }}>
+          <Text style={{ fontSize: 12, color: '#999' }}>1 km</Text>
+          <Text style={{ fontSize: 12, color: '#999' }}>10 km</Text>
+        </View>
+      </Animated.View>
+
+      {/* Category Tabs with improved UI */}
+      <View style={styles.categoryTabsContainer}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryTabs}
+        >
+          {['Recent', 'Most Liked', 'Important', 'Others'].map((category) => (
+            <TouchableOpacity
+              key={category}
+              style={[
+                styles.categoryTab,
+                activeCategory === category && styles.activeTab
+              ]}
+              onPress={() => setActiveCategory(category)}
+            >
+              <Text 
+                style={[
+                  styles.categoryTabText,
+                  activeCategory === category && styles.activeTabText
+                ]}
+              >
+                {category}
+              </Text>
+              {activeCategory === category && (
+                <View style={styles.activeTabIndicator} />
+              )}
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       {/* Scrollable content - only the posts will scroll */}
@@ -969,7 +1026,9 @@ export default function CommunityScreen() {
           
           <ScrollView style={styles.formContainer}>
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Title <Text style={{color: '#FF5200'}}>*</Text></Text>
+              <Text style={styles.inputLabel}>
+                Title <Text style={{color: '#FF5200'}}>*</Text>
+              </Text>
               <View style={styles.titleInputWrapper}>
                 <TextInput
                   style={styles.titleInput}
@@ -1004,7 +1063,12 @@ export default function CommunityScreen() {
               <Text style={styles.inputLabel}>Tags</Text>
               <View style={styles.tagInputContainer}>
                 <View style={styles.tagInputWrapper}>
-                  <Ionicons name="pricetag-outline" size={18} color="#999" style={styles.inputIcon} />
+                  <Ionicons
+                    name="pricetag-outline"
+                    size={18}
+                    color="#999"
+                    style={styles.inputIcon}
+                  />
                   <TextInput
                     style={styles.tagInput}
                     placeholder="Add tags"
@@ -1014,10 +1078,7 @@ export default function CommunityScreen() {
                     placeholderTextColor="#999"
                   />
                 </View>
-                <TouchableOpacity 
-                  style={styles.addTagButton}
-                  onPress={addTag}
-                >
+                <TouchableOpacity style={styles.addTagButton} onPress={addTag}>
                   <Text style={styles.addTagButtonText}>Add</Text>
                 </TouchableOpacity>
               </View>
@@ -1032,7 +1093,12 @@ export default function CommunityScreen() {
                       activeOpacity={0.7}
                     >
                       <Text style={styles.selectedTagText}>{tag}</Text>
-                      <Ionicons name="close-circle" size={16} color="white" style={styles.tagRemoveIcon} />
+                      <Ionicons
+                        name="close-circle"
+                        size={16}
+                        color="white"
+                        style={styles.tagRemoveIcon}
+                      />
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -1046,7 +1112,8 @@ export default function CommunityScreen() {
               <View style={styles.locationTextContainer}>
                 <Text style={styles.locationInfoTitle}>Location</Text>
                 <Text style={styles.locationInfoText}>
-                  Your post will be visible to users within {radius} km of your current location
+                  Your post will be visible to users within {radius} km of your
+                  current location
                 </Text>
               </View>
             </View>
@@ -1054,7 +1121,7 @@ export default function CommunityScreen() {
             <TouchableOpacity 
               style={[
                 styles.createButton,
-                (!title.trim()) && styles.createButtonDisabled
+                !title.trim() && styles.createButtonDisabled,
               ]} 
               onPress={createPost}
               disabled={!title.trim()}
@@ -1072,8 +1139,8 @@ export default function CommunityScreen() {
         style={[
           styles.floatingButton,
           {
-            transform: [{ scale: pulseAnim }]
-          }
+            transform: [{ scale: pulseAnim }],
+          },
         ]}
       >
         <TouchableOpacity 
@@ -1090,7 +1157,7 @@ export default function CommunityScreen() {
         </TouchableOpacity>
       </Animated.View>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -1833,4 +1900,4 @@ const styles = StyleSheet.create({
     padding: 8,
     zIndex: 10,
   },
-});
+})
