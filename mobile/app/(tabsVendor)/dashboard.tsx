@@ -1,4 +1,18 @@
-import { StyleSheet, Text, View, TouchableOpacity, Alert, ScrollView, Image, ActivityIndicator, Modal, TextInput, FlatList, Dimensions, Linking } from 'react-native'
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+  Image,
+  ActivityIndicator,
+  Modal,
+  TextInput,
+  FlatList,
+  Dimensions,
+  Linking,
+} from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'expo-router'
 import { useAuth } from '../../contexts/AuthContext'
@@ -41,19 +55,21 @@ export default function VendorDashboard() {
   const [loading, setLoading] = useState(true)
   const [stalls, setStalls] = useState<Stall[]>([])
   const [stallModalVisible, setStallModalVisible] = useState(false)
-  
+
   // New stall form fields
   const [stallName, setStallName] = useState('')
   const [cuisine, setCuisine] = useState('')
   const [stallLocation, setStallLocation] = useState<{
-    latitude: number;
-    longitude: number;
-    address: string;
+    latitude: number
+    longitude: number
+    address: string
   } | null>(null)
-  const [stallImages, setStallImages] = useState<{
-    uri: string;
-    fileName: string;
-  }[]>([])
+  const [stallImages, setStallImages] = useState<
+    {
+      uri: string
+      fileName: string
+    }[]
+  >([])
   const [formLoading, setFormLoading] = useState(false)
 
   const handleSignOut = async () => {
@@ -106,9 +122,9 @@ export default function VendorDashboard() {
           .select('*')
           .eq('user_id', user.id)
           .single()
-        
+
         if (error) throw error
-        
+
         setVendorProfile(data)
         fetchVendorStalls()
       } catch (error) {
@@ -124,20 +140,20 @@ export default function VendorDashboard() {
       try {
         setLoading(true)
         console.log('Fetching stalls for vendor ID:', user.id)
-        console.log(user.id);
-        
+        console.log(user.id)
+
         // Direct Supabase query instead of using getVendorStalls
         const { data: stallsData, error } = await supabase
           .from('stalls')
           .select('*, images(*)')
-          .eq('vendor_id', user.id);
-          
+          .eq('vendor_id', user.id)
+
         if (error) {
           console.error('Supabase error fetching stalls:', error)
-          throw error;
+          throw error
         }
-        
-        console.log(stallsData);
+
+        console.log(stallsData)
         setStalls(stallsData || [])
       } catch (error) {
         console.error('Error fetching stalls:', error)
@@ -154,7 +170,7 @@ export default function VendorDashboard() {
       const { status } = await Location.requestForegroundPermissionsAsync()
       if (status !== 'granted') {
         Alert.alert(
-          'Location Permission Required', 
+          'Location Permission Required',
           'We need location permission to add your stall. Please enable location in your device settings.',
           [
             {
@@ -164,7 +180,7 @@ export default function VendorDashboard() {
             {
               text: 'Settings',
               onPress: () => Linking.openSettings(),
-            }
+            },
           ]
         )
         return
@@ -172,11 +188,11 @@ export default function VendorDashboard() {
 
       // Show loading feedback
       setFormLoading(true)
-      
+
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
       })
-      
+
       // Reverse geocode to get address
       const addressResponse = await Location.reverseGeocodeAsync({
         latitude: location.coords.latitude,
@@ -200,7 +216,7 @@ export default function VendorDashboard() {
       console.log('Current location detected:', {
         lat: location.coords.latitude,
         lng: location.coords.longitude,
-        address
+        address,
       })
 
       setStallLocation({
@@ -211,7 +227,7 @@ export default function VendorDashboard() {
     } catch (error: any) {
       console.error('Error getting location:', error)
       Alert.alert(
-        'Location Error', 
+        'Location Error',
         'Failed to get your current location. Please make sure your GPS is enabled.',
         [
           {
@@ -221,7 +237,7 @@ export default function VendorDashboard() {
           {
             text: 'Try Again',
             onPress: getCurrentLocation,
-          }
+          },
         ]
       )
     } finally {
@@ -246,7 +262,7 @@ export default function VendorDashboard() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0]
-        
+
         setStallImages([
           ...stallImages,
           {
@@ -298,9 +314,9 @@ export default function VendorDashboard() {
         vendor_id: user.id,
         name: stallName,
         location: `POINT(${stallLocation.longitude} ${stallLocation.latitude})`,
-        cuisine
+        cuisine,
       })
-      
+
       // Create stall with Supabase - only sending required fields
       const { data: stallData, error: stallError } = await supabase
         .from('stalls')
@@ -310,30 +326,37 @@ export default function VendorDashboard() {
           cuisine,
           location: `POINT(${stallLocation.longitude} ${stallLocation.latitude})`, // PostgreSQL geography format
           // Use the first image as the main stall image
-          image_url: stallImages.length > 0 ? stallImages[0].uri : null
+          image_url: stallImages.length > 0 ? stallImages[0].uri : null,
         })
-        .select();
+        .select()
 
       if (stallError) {
         console.error('Error inserting stall:', stallError)
         throw new Error(`Failed to create stall: ${stallError.message}`)
       }
-      
+
       console.log('Stall created successfully:', stallData)
-      
+
       if (!stallData || stallData.length === 0) {
         throw new Error('Stall was created but no data was returned')
       }
-      
+
       const stallId = stallData[0].id
 
       // Create additional image records if needed (for images 2-5)
       if (stallImages.length > 1) {
-        console.log(`Adding ${stallImages.length - 1} additional images for stall ${stallId}`)
-        
+        console.log(
+          `Adding ${
+            stallImages.length - 1
+          } additional images for stall ${stallId}`
+        )
+
         const imagePromises = stallImages.slice(1).map(async (image, index) => {
-          console.log(`Processing additional image ${index + 2}:`, image.uri.substring(0, 50) + '...')
-          
+          console.log(
+            `Processing additional image ${index + 2}:`,
+            image.uri.substring(0, 50) + '...'
+          )
+
           // Insert image record
           const { data: imageData, error: imageError } = await supabase
             .from('images')
@@ -342,7 +365,7 @@ export default function VendorDashboard() {
               user_id: user.id,
               image_url: image.uri,
             })
-            .select();
+            .select()
 
           if (imageError) {
             console.error(`Error creating image ${index + 2}:`, imageError)
@@ -379,14 +402,14 @@ export default function VendorDashboard() {
   // Toggle stall modal visibility
   const toggleStallModal = async (visible: boolean) => {
     setStallModalVisible(visible)
-    
+
     // When opening the modal, get the current location automatically
     if (visible) {
       // Reset form fields
       setStallName('')
       setCuisine('')
       setStallImages([])
-      
+
       // Get location automatically
       try {
         await getCurrentLocation()
@@ -399,15 +422,15 @@ export default function VendorDashboard() {
   // Stall card component
   const renderStallCard = ({ item }: { item: Stall }) => {
     // Use image_url if available, or first image from images array, or a placeholder
-    const imageUrl = item.image_url 
+    const imageUrl = item.image_url
       ? item.image_url
-      : (item.images && item.images.length > 0 
-        ? item.images[0].image_url 
-        : 'https://via.placeholder.com/300x200?text=No+Image')
+      : item.images && item.images.length > 0
+      ? item.images[0].image_url
+      : 'https://via.placeholder.com/300x200?text=No+Image'
 
     const hygieneScore = item.hygiene_score || 0
     const isVerified = item.is_verified || false
-    
+
     return (
       <TouchableOpacity
         style={styles.stallCard}
@@ -428,7 +451,11 @@ export default function VendorDashboard() {
           <Text style={styles.stallCuisine}>{item.cuisine}</Text>
           <View style={styles.stallFooter}>
             <View style={styles.hygieneContainer}>
-              <MaterialIcons name="cleaning-services" size={16} color="#4CAF50" />
+              <MaterialIcons
+                name="cleaning-services"
+                size={16}
+                color="#4CAF50"
+              />
               <Text style={styles.hygieneText}>{hygieneScore}/5</Text>
             </View>
             <Text style={styles.createdDate}>
@@ -482,8 +509,10 @@ export default function VendorDashboard() {
               <Text style={styles.label}>Location</Text>
               {stallLocation ? (
                 <View style={styles.locationContainer}>
-                  <Text style={styles.locationText}>{stallLocation.address}</Text>
-                  <TouchableOpacity 
+                  <Text style={styles.locationText}>
+                    {stallLocation.address}
+                  </Text>
+                  <TouchableOpacity
                     style={styles.locationButton}
                     onPress={getCurrentLocation}
                     disabled={formLoading}
@@ -491,12 +520,14 @@ export default function VendorDashboard() {
                     {formLoading ? (
                       <ActivityIndicator size="small" color="white" />
                     ) : (
-                      <Text style={styles.locationButtonText}>Update Location</Text>
+                      <Text style={styles.locationButtonText}>
+                        Update Location
+                      </Text>
                     )}
                   </TouchableOpacity>
                 </View>
               ) : (
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.locationButton}
                   onPress={getCurrentLocation}
                   disabled={formLoading}
@@ -505,8 +536,14 @@ export default function VendorDashboard() {
                     <ActivityIndicator size="small" color="white" />
                   ) : (
                     <>
-                      <MaterialIcons name="location-on" size={18} color="white" />
-                      <Text style={styles.locationButtonText}>Get Current Location</Text>
+                      <MaterialIcons
+                        name="location-on"
+                        size={18}
+                        color="white"
+                      />
+                      <Text style={styles.locationButtonText}>
+                        Get Current Location
+                      </Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -515,13 +552,18 @@ export default function VendorDashboard() {
 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Stall Images (5 images)</Text>
-              <Text style={styles.helperText}>Upload exactly 5 images of your stall</Text>
-              
+              <Text style={styles.helperText}>
+                Upload exactly 5 images of your stall
+              </Text>
+
               <View style={styles.imagesContainer}>
                 {stallImages.map((image, index) => (
                   <View key={index} style={styles.imagePreview}>
-                    <Image source={{ uri: image.uri }} style={styles.previewImage} />
-                    <TouchableOpacity 
+                    <Image
+                      source={{ uri: image.uri }}
+                      style={styles.previewImage}
+                    />
+                    <TouchableOpacity
                       style={styles.removeImageButton}
                       onPress={() => removeImage(index)}
                     >
@@ -529,18 +571,22 @@ export default function VendorDashboard() {
                     </TouchableOpacity>
                   </View>
                 ))}
-                
+
                 {stallImages.length < 5 && (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.addImageButton}
                     onPress={pickStallImage}
                   >
-                    <MaterialIcons name="add-photo-alternate" size={24} color="#ff8c00" />
+                    <MaterialIcons
+                      name="add-photo-alternate"
+                      size={24}
+                      color="#ff8c00"
+                    />
                     <Text style={styles.addImageText}>Add Image</Text>
                   </TouchableOpacity>
                 )}
               </View>
-              
+
               <Text style={styles.imagesCounter}>
                 {stallImages.length} of 5 images
               </Text>
@@ -548,10 +594,10 @@ export default function VendorDashboard() {
           </ScrollView>
 
           <View style={styles.modalFooter}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
                 styles.createButton,
-                formLoading && styles.disabledButton
+                formLoading && styles.disabledButton,
               ]}
               onPress={createStall}
               disabled={formLoading}
@@ -605,20 +651,22 @@ export default function VendorDashboard() {
           <>
             <View style={styles.profileHeader}>
               {vendorProfile.profile_image && (
-                <Image 
-                  source={{ uri: vendorProfile.profile_image }} 
-                  style={styles.profileImage} 
+                <Image
+                  source={{ uri: vendorProfile.profile_image }}
+                  style={styles.profileImage}
                 />
               )}
               <View style={styles.profileInfo}>
-                <Text style={styles.profileName}>{user?.user_metadata?.full_name || 'Vendor'}</Text>
+                <Text style={styles.profileName}>
+                  {user?.user_metadata?.full_name || 'Vendor'}
+                </Text>
                 <Text style={styles.profileEmail}>{user?.email}</Text>
               </View>
             </View>
 
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Your Stalls</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.addButton}
                 onPress={() => toggleStallModal(true)}
               >
@@ -638,7 +686,7 @@ export default function VendorDashboard() {
               <FlatList
                 data={stalls}
                 renderItem={renderStallCard}
-                keyExtractor={item => item.id}
+                keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.stallsList}
                 scrollEnabled={false}
               />
@@ -983,4 +1031,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#ff8c00',
   },
-});
+})
