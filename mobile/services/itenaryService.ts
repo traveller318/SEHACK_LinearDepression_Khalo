@@ -42,7 +42,7 @@ const MOCK_ITINERARIES = [
     },
 ];
 
-// Replace with your actual Gemini API key if you have one
+// Replace with your actual Gemini API key
 const GEMINI_API_KEY = 'AIzaSyAnckvGLv58t7RZdcadX1lZQS9G3FPmkt8';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
 
@@ -68,35 +68,28 @@ export const generateItineraries = async (
     numItineraries: number = 5
 ): Promise<Itinerary[]> => {
     try {
-        // For a real implementation, you would use an actual AI API like Gemini
-        // This is a mock implementation
-
         return new Promise((resolve) => {
             setTimeout(() => {
-                // Simulate processing based on user preferences
                 const filteredItineraries = MOCK_ITINERARIES.filter((itinerary) => {
                     return preferences.some((preference) =>
                         itinerary.description.toLowerCase().includes(preference.toLowerCase())
                     );
                 });
 
-                // If no matching itineraries are found, return some default ones
                 if (filteredItineraries.length === 0) {
                     resolve(MOCK_ITINERARIES.slice(0, numItineraries));
                 } else {
-                    // Limit to the requested number of itineraries
                     resolve(filteredItineraries.slice(0, numItineraries));
                 }
-            }, 1500); // Simulate API delay
+            }, 1500);
         });
     } catch (error) {
         console.error('Error generating itineraries:', error);
-        // Return some default itineraries on error
         return MOCK_ITINERARIES.slice(0, 3);
     }
 };
 
-// For future implementation: Real Gemini API call
+// Real Gemini API call with updated food itinerary prompt
 export const generateRealItineraries = async (
     latitude: number,
     longitude: number,
@@ -104,11 +97,41 @@ export const generateRealItineraries = async (
     numItineraries: number = 5
 ): Promise<Itinerary[]> => {
     try {
-        // Create a prompt for the AI
         const preferencesString = preferences.join(', ');
-        const prompt = `Based on these preferences: ${preferencesString}, recommend ${numItineraries} personalized travel itineraries near latitude ${latitude} and longitude ${longitude}. Each itinerary should include a title, a brief description, and a list of places to visit. For each place, provide the name, address, image URL, and rating out of 5. Make the response in a structured format.`;
 
-        // Make the API call to Gemini
+        const prompt = `
+Based on the user's preferences for a food-focused travel experience, please generate ${numItineraries} highly personalized and well-structured travel itineraries near the coordinates latitude: ${latitude} and longitude: ${longitude}. Each itinerary should be centered around culinary exploration and should include the following details:
+
+- A compelling title that captures the theme or mood of the itinerary.
+- A concise but vivid description that explains what the traveler will experience, highlighting the uniqueness and cultural relevance of the food journey.
+- A list of specific food places (minimum 2-4 per itinerary), each with:
+  - Name of the place
+  - Address
+  - A realistic image URL
+  - A rating out of 5, based on popularity or customer reviews
+
+Ensure the itineraries are diverse in terms of cuisine type, locality, ambiance (e.g., street food, fine dining, local markets), and cultural significance. Incorporate a mix of hidden gems, must-visit local eateries, and iconic food spots.
+
+Tailor each itinerary to reflect the preferences provided: ${preferencesString}. Keep the tone engaging and informative, suitable for a travel app aiming to delight food enthusiasts.
+
+Return the output in a structured JSON format, making sure each itinerary follows this schema:
+
+{
+  "id": "unique string identifier",
+  "title": "Itinerary title",
+  "description": "Short paragraph describing the food experience",
+  "places": [
+    {
+      "name": "Place name",
+      "address": "Full address",
+      "image": "Valid image URL",
+      "rating": 4.5
+    },
+    ...
+  ]
+}
+        `;
+
         const response = await axios.post(
             GEMINI_API_URL,
             {
@@ -130,8 +153,7 @@ export const generateRealItineraries = async (
             }
         );
 
-        // Parse the AI response and convert to Itinerary format
-        // This is mockup code - in a real implementation, you would parse the AI response
+        // Placeholder: Replace with actual parsing of response
         const aiItineraries = MOCK_ITINERARIES.slice(0, numItineraries).map(itinerary => ({
             id: itinerary.id,
             title: itinerary.title,
