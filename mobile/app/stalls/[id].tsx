@@ -75,6 +75,97 @@ const STALL_IMAGES = [
   'https://source.unsplash.com/random/800x600/?chef,1',
 ]
 
+// Sample data for random hygiene reports
+const GOOD_PRACTICES = [
+  "Regular cleaning schedule followed",
+  "Proper food storage practices",
+  "Staff follows hygiene protocols",
+  "Fresh ingredients used daily",
+  "Food preparation areas kept clean",
+  "Appropriate use of gloves during food handling",
+  "Regular handwashing observed",
+  "Proper waste disposal methods",
+  "Temperature control for perishable items",
+  "Clean uniforms and appearance of staff",
+  "Separate utensils for different food items",
+  "Regular pest control measures"
+]
+
+const ISSUES_FOUND = [
+  "Some equipment needs maintenance",
+  "Minor cleaning issues in corners",
+  "Storage area needs better organization",
+  "Refrigeration temperature slightly high",
+  "Handwashing station needs supplies",
+  "Food labels missing on some containers",
+  "Waste bins need more frequent emptying",
+  "Some food stored at improper heights",
+  "Water drainage issues in washing area",
+  "Staff training records incomplete",
+  "Some utensils showing signs of wear"
+]
+
+const RECOMMENDATIONS = [
+  "Implement daily cleaning checklist",
+  "Schedule regular deep cleaning",
+  "Update staff training on hygiene practices",
+  "Improve storage area organization",
+  "Install better temperature monitoring system",
+  "Replace worn-out equipment",
+  "Add more frequent cleaning cycles",
+  "Develop better inventory rotation system",
+  "Install additional handwashing stations",
+  "Create visual reminders for staff hygiene protocols",
+  "Conduct monthly hygiene training refreshers",
+  "Improve waste management procedures"
+]
+
+const OVERALL_SUMMARIES = [
+  "Overall, the stall maintains good hygiene standards with some minor improvements needed.",
+  "This food stall demonstrates strong hygiene practices, but a few areas could use attention to reach excellent standards.",
+  "The vendor shows commitment to cleanliness with well-maintained equipment and appropriate food handling techniques.",
+  "While the stall meets basic hygiene standards, there are several areas where improvements would significantly enhance food safety.",
+  "Hygiene practices are generally good, though certain procedures could be streamlined for better efficiency and safety.",
+  "This stall shows above-average cleanliness, with consistent application of food safety protocols.",
+  "The vendor maintains a clean environment with good practices, though some inconsistencies were observed during busy periods.",
+  "Food handling and storage show careful attention to hygiene standards, with only minor improvements recommended."
+]
+
+// Function to generate random opening hours
+const generateRandomOpeningHours = () => {
+  const openingHourOptions = [8, 9, 10, 11]
+  const closingHourOptions = [19, 20, 21, 22, 23]
+  
+  const openingHour = openingHourOptions[Math.floor(Math.random() * openingHourOptions.length)]
+  const closingHour = closingHourOptions[Math.floor(Math.random() * closingHourOptions.length)]
+  
+  const openingTime = `${openingHour}:00 AM - ${closingHour % 12 || 12}:00 PM`
+  return openingTime
+}
+
+// Function to generate random average price
+const generateRandomAvgPrice = () => {
+  const prices = ['₹100', '₹150', '₹180', '₹200', '₹250', '₹120', '₹160', '₹220']
+  return `${prices[Math.floor(Math.random() * prices.length)]} for one`
+}
+
+// Function to generate random hygiene report
+const generateRandomHygieneReport = () => {
+  // Select 3-5 random items from each category
+  const getRandomItems = (array: string[], min = 3, max = 5) => {
+    const count = Math.floor(Math.random() * (max - min + 1)) + min
+    const shuffled = [...array].sort(() => 0.5 - Math.random())
+    return shuffled.slice(0, count)
+  }
+  
+  return {
+    good_practices: getRandomItems(GOOD_PRACTICES),
+    issues_found: getRandomItems(ISSUES_FOUND, 2, 4),
+    recommendations: getRandomItems(RECOMMENDATIONS, 2, 4),
+    overall_summary: OVERALL_SUMMARIES[Math.floor(Math.random() * OVERALL_SUMMARIES.length)]
+  }
+}
+
 // Sample data for reviews
 // const REVIEWS: Review[] =
 
@@ -948,6 +1039,7 @@ const StallPage = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [hygieneReportModalVisible, setHygieneReportModalVisible] =
     useState(false)
+  const [hygieneReportData, setHygieneReportData] = useState(generateRandomHygieneReport())
   const [stallData, setStallData] = useState<StallData>({
     name: 'Street Corner Delights',
     rating: 4.5,
@@ -955,10 +1047,10 @@ const StallPage = () => {
     cuisine: 'North Indian, Chinese',
     address: '123 Food Street, Mumbai',
     distance: '1.2 km',
-    openingTime: '10:00 AM - 10:00 PM',
+    openingTime: generateRandomOpeningHours(),
     phoneNumber: '+91 98765 43210',
     hygieneScore: 4.2,
-    avgPrice: '₹150 for one',
+    avgPrice: generateRandomAvgPrice(),
   })
   const headerHeight = 250
   const headerOpacity = scrollY.interpolate({
@@ -999,11 +1091,26 @@ const StallPage = () => {
 
   useEffect(() => {
     const fetchStallData = async () => {
-      const response = await getSingleStall(id)
-      setIsLoading(false)
-      console.log('Hello')
-      console.log(response)
-      setStallData(response)
+      try {
+        const response = await getSingleStall(id)
+        setIsLoading(false)
+        console.log('Hello')
+        console.log(response)
+        
+        // Apply random opening time and price to the stall data
+        const updatedResponse = {
+          ...response,
+          openingTime: generateRandomOpeningHours(),
+          avgPrice: generateRandomAvgPrice(),
+        }
+        
+        setStallData(updatedResponse)
+        // Generate random hygiene report data when stall data is loaded
+        setHygieneReportData(generateRandomHygieneReport())
+      } catch (err) {
+        console.error('Error fetching stall data:', err)
+        setIsLoading(false)
+      }
     }
     fetchStallData()
   }, [id])
@@ -1101,7 +1208,7 @@ const StallPage = () => {
             {ratingScore > 0 && (
               <View style={styles.averageRatingContainer}>
                 <Text style={styles.averageRatingValue}>
-                  {ratingScore.toFixed(1)}
+                  {ratingScore}
                 </Text>
                 <View style={styles.averageRatingStars}>
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -1557,32 +1664,13 @@ const StallPage = () => {
     )
   }
 
-  // Mock hygiene report data (replace with real data in production)
-  const hygieneMockData = {
-    good_practices: [
-      "Regular cleaning schedule followed",
-      "Proper food storage practices",
-      "Staff follows hygiene protocols"
-    ],
-    issues_found: [
-      "Some equipment needs maintenance",
-      "Minor cleaning issues in corners"
-    ],
-    recommendations: [
-      "Implement daily cleaning checklist",
-      "Schedule regular deep cleaning",
-      "Update staff training on hygiene practices"
-    ],
-    overall_summary: "Overall, the stall maintains good hygiene standards with some minor improvements needed."
-  }
-
   const renderHygieneReportModal = () => {
     return (
       <HygieneReportModal
         visible={hygieneReportModalVisible}
         onClose={() => setHygieneReportModalVisible(false)}
         hygieneScore={stallData.hygieneScore}
-        reportData={hygieneMockData}
+        reportData={hygieneReportData}
       />
     )
   }
