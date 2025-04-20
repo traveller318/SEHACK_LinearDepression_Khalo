@@ -190,4 +190,27 @@ router.post('/getMenuItems', async (req, res) => {
   }
 })
 
+// Get all stalls for a specific vendor
+router.post('/getVendorStalls', async (req, res) => {
+  try {
+    const { vendor_id } = req.body
+    
+    if (!vendor_id) {
+      return res.status(400).json({ error: 'Vendor ID is required' })
+    }
+    
+    const { data, error } = await supabase
+      .from('stalls')
+      .select('*, images(*)')
+      .eq('vendor_id', vendor_id)
+    
+    if (error) throw error
+    
+    res.status(200).json(data)
+  } catch (error) {
+    console.error('Error fetching vendor stalls:', error)
+    res.status(400).json({ error: error.message })
+  }
+})
+
 export default router
