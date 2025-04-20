@@ -1,8 +1,81 @@
-import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity, ActivityIndicator, FlatList, Image } from 'react-native';
-import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity, ActivityIndicator, FlatList, Image, Animated, Dimensions } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
+import { FontAwesome, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
+import { LinearGradient } from 'expo-linear-gradient';
+
+// Sample stall data for recommendations
+const STALLS_DATA = [
+  {
+    id: '1',
+    name: 'Tian Tian Chicken Rice',
+    image: 'https://images.unsplash.com/photo-1569058242567-93de6f36f8eb?q=80&w=2070',
+    description: 'Famous for their Hainanese chicken rice',
+    location: 'Maxwell Food Centre',
+    cuisine: 'Chinese',
+    distance: '0.5 km',
+    deliveryTime: '15-20 min',
+    rating: 4.5,
+    hygieneScore: 'A',
+    verified: true,
+  },
+  {
+    id: '2',
+    name: 'Da Paolo Ristorante',
+    image: 'https://images.unsplash.com/photo-1546549032-9571cd6b27df?q=80&w=2070',
+    description: 'Authentic Italian pastas and wood-fired pizzas',
+    location: 'Holland Village',
+    cuisine: 'Italian',
+    distance: '2.3 km',
+    deliveryTime: '25-35 min',
+    rating: 4.7,
+    hygieneScore: 'A',
+    verified: true,
+  },
+  {
+    id: '3',
+    name: 'Szechuan Paradise',
+    image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?q=80&w=2129',
+    description: 'Spicy Szechuan dishes and hotpot specialties',
+    location: 'VivoCity',
+    cuisine: 'Chinese',
+    distance: '1.8 km',
+    deliveryTime: '20-30 min',
+    rating: 4.3,
+    hygieneScore: 'B',
+    verified: true,
+  },
+  {
+    id: '4',
+    name: 'Pasta Fresca',
+    image: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=2032',
+    description: 'Handmade pasta and traditional Italian recipes',
+    location: 'Bukit Timah',
+    cuisine: 'Italian',
+    distance: '3.5 km',
+    deliveryTime: '30-40 min',
+    rating: 4.6,
+    hygieneScore: 'A',
+    verified: true,
+  },
+  {
+    id: '5',
+    name: 'Dim Sum Palace',
+    image: 'https://images.unsplash.com/photo-1566426795525-1e3a5d3b6402?q=80&w=2070',
+    description: 'Wide variety of dim sum and Cantonese specialties',
+    location: 'Chinatown',
+    cuisine: 'Chinese',
+    distance: '1.2 km',
+    deliveryTime: '15-25 min',
+    rating: 4.4,
+    hygieneScore: 'A',
+    verified: true,
+  },
+];
+
+const { width } = Dimensions.get('window');
+const STALL_CARD_WIDTH = width * 0.9;
 
 export default function MicScreen() {
   const insets = useSafeAreaInsets();
@@ -14,6 +87,44 @@ export default function MicScreen() {
   const [duration, setDuration] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recordingsList, setRecordingsList] = useState<{uri: string, duration: number}[]>([]);
+  
+  // New states for loading and recommendations
+  const [loading, setLoading] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [recommendedStalls, setRecommendedStalls] = useState(STALLS_DATA);
+  
+  // Animation references
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Start fade-in animation when switching views
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 1000,
+      useNativeDriver: true,
+    }).start();
+  }, [showRecommendations, loading]);
+
+  useEffect(() => {
+    if (loading) {
+      // Create a continuous spinning animation
+      Animated.loop(
+        Animated.timing(spinAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      spinAnim.setValue(0);
+    }
+  }, [loading]);
+
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   const startRecording = async () => {
     try {
@@ -26,6 +137,7 @@ export default function MicScreen() {
       }
       setRecordingUri(null);
       setDuration(null);
+      setShowRecommendations(false);
 
       // Request permissions
       const { status } = await Audio.requestPermissionsAsync();
@@ -102,8 +214,15 @@ export default function MicScreen() {
         setRecordingUri(uri);
         setRecordingsList(prev => [...prev, {uri, duration: durationMillis / 1000}]);
         
-        // Load the recorded audio for playback
-        await loadSound(uri);
+        // Start loading process
+        fadeAnim.setValue(0);
+        setLoading(true);
+        
+        // Simulate processing the audio and getting recommendations
+        setTimeout(() => {
+          setLoading(false);
+          setShowRecommendations(true);
+        }, 5000); // 5 seconds loading
       } else {
         setError('Failed to get recording URI');
       }
@@ -186,6 +305,113 @@ export default function MicScreen() {
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
+  
+  const renderRatingStars = (rating: number) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const halfStar = rating % 1 >= 0.5;
+
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(<FontAwesome5 key={i} name="star" size={14} color="#FFD700" style={{marginRight: 2}} />);
+      } else if (i === fullStars && halfStar) {
+        stars.push(<FontAwesome5 key={i} name="star-half-alt" size={14} color="#FFD700" style={{marginRight: 2}} />);
+      } else {
+        stars.push(<FontAwesome5 key={i} name="star" size={14} color="#E0E0E0" style={{marginRight: 2}} />);
+      }
+    }
+
+    return (
+      <View style={styles.ratingContainer}>
+        <View style={styles.starsContainer}>
+          {stars}
+        </View>
+        <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
+      </View>
+    );
+  };
+
+  const renderStall = ({ item, index }: { item: any; index: number }) => {
+    return (
+      <Animated.View
+        style={[
+          styles.stallCard,
+          {
+            opacity: fadeAnim,
+            transform: [
+              {
+                translateY: fadeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [50, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        <View style={styles.imageContainer}>
+          <Image source={{ uri: item.image }} style={styles.stallImage} />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.8)']}
+            style={styles.imageGradient}
+          />
+          <View style={styles.imageOverlayContent}>
+            <Text style={styles.stallName}>{item.name}</Text>
+            {renderRatingStars(item.rating)}
+          </View>
+          
+          {item.verified && (
+            <View style={styles.verifiedBadge}>
+              <FontAwesome5 name="check-circle" size={14} color="#3498db" />
+              <Text style={styles.verifiedText}>Verified</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.stallContent}>
+          <View style={styles.tagRow}>
+            <View style={styles.cuisineTag}>
+              <FontAwesome5 name="utensils" size={12} color="#FF5200" />
+              <Text style={styles.cuisineText}>{item.cuisine}</Text>
+            </View>
+            
+            {item.hygieneScore && (
+              <View style={styles.hygieneScore}>
+                <Text style={styles.hygieneScoreText}>{item.hygieneScore}</Text>
+              </View>
+            )}
+          </View>
+
+          <Text numberOfLines={2} style={styles.stallDescription}>
+            {item.description}
+          </Text>
+          
+          <View style={styles.detailsContainer}>
+            <View style={styles.detailItem}>
+              <FontAwesome5 name="map-marker-alt" size={14} color="#666" />
+              <Text style={styles.detailText}>{item.distance}</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <FontAwesome5 name="clock" size={14} color="#666" />
+              <Text style={styles.detailText}>{item.deliveryTime}</Text>
+            </View>
+          </View>
+          
+          <TouchableOpacity 
+            style={styles.locationButton}
+          >
+            <FontAwesome5 name="directions" size={16} color="white" />
+            <Text style={styles.locationText}>Directions</Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+    );
+  };
+
+  const handleNewRecording = () => {
+    setShowRecommendations(false);
+    setRecordingUri(null);
+  };
 
   // Clean up when component unmounts
   useEffect(() => {
@@ -201,93 +427,85 @@ export default function MicScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Voice Recorder</Text>
-      </View>
+      <LinearGradient
+        colors={['#FF5200', '#FF8C00']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.header}
+      >
+        <View style={styles.headerContent}>
+          <FontAwesome5 name="microphone" size={24} color="white" />
+          <Text style={styles.headerTitle}>Voice Diner</Text>
+        </View>
+      </LinearGradient>
       
-      <View style={styles.content}>
-        <Text style={styles.instructionText}>
-          {isListening ? 'Listening...' : 'Tap the microphone to start'}
-        </Text>
-        
-        <TouchableOpacity 
-          style={[
-            styles.micButton, 
-            isListening && styles.listeningButton
-          ]}
-          onPress={toggleListening}
-        >
-          <FontAwesome 
-            name="microphone" 
-            size={40} 
-            color={isListening ? "#ffffff" : "#FF5200"} 
-          />
-        </TouchableOpacity>
-        
-        {recordingUri && (
-          <View style={styles.playbackContainer}>
-            <TouchableOpacity 
-              style={styles.playbackButton}
-              onPress={isPlaying ? stopSound : () => playSound()}
-            >
-              <FontAwesome 
-                name={isPlaying ? "stop" : "play"} 
-                size={24} 
-                color="#ffffff" 
-              />
-            </TouchableOpacity>
-            <View>
-              <Text style={styles.playbackText}>
-                {isPlaying ? "Stop Playback" : "Play Recording"}
-              </Text>
-              {duration && (
-                <Text style={styles.durationText}>
-                  Duration: {formatDuration(duration)}
-                </Text>
-              )}
-            </View>
+      <Animated.View 
+        style={[
+          styles.content,
+          { opacity: fadeAnim }
+        ]}
+      >
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <Animated.View style={{ transform: [{ rotate: spin }] }}>
+              <FontAwesome5 name="hamburger" size={50} color="#FF5200" />
+            </Animated.View>
+            <Text style={styles.loadingText}>Analyzing your food preferences...</Text>
+            <Text style={styles.loadingSubtext}>Finding the perfect stalls for you</Text>
           </View>
-        )}
-        
-        {error && (
-          <Text style={styles.errorText}>{error}</Text>
-        )}
-
-        {recordingsList.length > 0 && (
-          <View style={styles.recordingsContainer}>
-            <Text style={styles.recordingsTitle}>Your Recordings</Text>
+        ) : showRecommendations ? (
+          <View style={styles.recommendationsContainer}>
+            <View style={styles.recommendationsHeader}>
+              <Text style={styles.recommendationsTitle}>
+                Recommended For You
+              </Text>
+              <TouchableOpacity
+                style={styles.newRecordingButton}
+                onPress={handleNewRecording}
+              >
+                <FontAwesome5 name="sync-alt" size={18} color="#FF5200" />
+                <Text style={styles.newRecordingText}>New Recording</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <Text style={styles.recommendationsSubtitle}>
+              Based on your voice request
+            </Text>
+            
             <FlatList
-              data={recordingsList}
-              renderItem={({ item, index }) => (
-                <TouchableOpacity 
-                  style={styles.recordingItem}
-                  onPress={() => playSound(item.uri)}
-                >
-                  <View style={styles.recordingIcon}>
-                    <FontAwesome name="file-audio-o" size={24} color="#FF5200" />
-                  </View>
-                  <View style={styles.recordingInfo}>
-                    <Text style={styles.recordingName}>Recording {index + 1}</Text>
-                    <Text style={styles.recordingDuration}>{formatDuration(item.duration)}</Text>
-                  </View>
-                  <TouchableOpacity 
-                    style={styles.playIcon}
-                    onPress={() => playSound(item.uri)}
-                  >
-                    <FontAwesome 
-                      name={isPlaying && recordingUri === item.uri ? "stop" : "play"} 
-                      size={20} 
-                      color="#FF5200" 
-                    />
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              )}
-              keyExtractor={(_, index) => index.toString()}
-              contentContainerStyle={styles.recordingsList}
+              data={recommendedStalls}
+              renderItem={renderStall}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.stallsListContainer}
+              showsVerticalScrollIndicator={false}
             />
           </View>
+        ) : (
+          <>
+            <Text style={styles.instructionText}>
+              {isListening ? 'Listening...' : 'Tap the microphone to start'}
+            </Text>
+            
+            <TouchableOpacity 
+              style={[
+                styles.micButton, 
+                isListening && styles.listeningButton
+              ]}
+              onPress={toggleListening}
+            >
+              <FontAwesome 
+                name="microphone" 
+                size={40} 
+                color={isListening ? "#ffffff" : "#FF5200"} 
+              />
+            </TouchableOpacity>
+            
+            {error && (
+              <Text style={styles.errorText}>{error}</Text>
+            )}
+          </>
         )}
-      </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -298,14 +516,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   header: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eeeeee',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 15,
+    borderBottomRightRadius: 15,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#FF5200',
+    color: 'white',
+    marginLeft: 12,
+    letterSpacing: 0.5,
   },
   content: {
     flex: 1,
@@ -364,6 +594,225 @@ const styles = StyleSheet.create({
     color: 'red',
     marginTop: 10,
     textAlign: 'center',
+  },
+  // Loading container styles
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    margin: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  loadingText: {
+    marginTop: 24,
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+  },
+  loadingSubtext: {
+    marginTop: 8,
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
+  // Recommendations styles
+  recommendationsContainer: {
+    flex: 1,
+    width: '100%',
+    backgroundColor: '#f8f9fa',
+  },
+  recommendationsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  recommendationsTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  newRecordingButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  newRecordingText: {
+    marginLeft: 5,
+    color: '#FF5200',
+    fontWeight: '600',
+  },
+  recommendationsSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 16,
+  },
+  stallsListContainer: {
+    paddingBottom: 20,
+  },
+  // Stall card styles
+  stallCard: {
+    width: STALL_CARD_WIDTH,
+    borderRadius: 16,
+    marginBottom: 20,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  imageContainer: {
+    height: 150,
+    width: '100%',
+    position: 'relative',
+  },
+  stallImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  imageGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 80,
+  },
+  imageOverlayContent: {
+    position: 'absolute',
+    bottom: 10,
+    left: 12,
+    right: 12,
+  },
+  stallName: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  starsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 5,
+  },
+  ratingText: {
+    color: 'white',
+    fontWeight: 'bold',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  verifiedBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'white',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  verifiedText: {
+    color: '#333',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 2,
+  },
+  stallContent: {
+    padding: 12,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  cuisineTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  cuisineText: {
+    color: '#333',
+    fontSize: 12,
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+  hygieneScore: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  hygieneScoreText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  stallDescription: {
+    color: '#666',
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  detailsContainer: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  detailText: {
+    color: '#666',
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  locationButton: {
+    backgroundColor: '#FF5200',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  locationText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 5,
   },
   recordingsContainer: {
     width: '100%',

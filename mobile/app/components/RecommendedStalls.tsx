@@ -377,5 +377,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default RecommendedStalls; 
-export default RecommendedStalls; 
+export default RecommendedStalls;
