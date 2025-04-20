@@ -26,22 +26,19 @@ NODE_API_URL = os.getenv("NODE_API_URL")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 
-@app.route("/generate_report", methods=["POST"])
+@app.route("/generate_report", methods=["GET"])
 def generate_report():
     try:
-        # Get image paths and vendor number from the request
-        data = request.get_json()
-        image_paths = data["image_paths"]
-        vendor_number = data["vendor_number"]
+        # Define the image paths
+        image_paths = [f"./side{i}.jpg" for i in range(1, 6)]
 
-        # Ensure that we have 5 images
-        if len(image_paths) != 5:
-            return (
-                jsonify(
-                    {"status": "error", "message": "Exactly 5 images are required"}
-                ),
-                400,
-            )
+        # Verify all images exist
+        for path in image_paths:
+            if not os.path.exists(path):
+                return (
+                    jsonify({"status": "error", "message": f"Image {path} not found"}),
+                    404,
+                )
 
         # Generate the cleanliness report
         report_data = generate_cleanliness_report(image_paths)
@@ -49,9 +46,22 @@ def generate_report():
         if report_data["status"] != "success":
             return jsonify(report_data), 400
 
+        # Get vendor number from query parameters
+        vendor_number = request.args.get("vendor_number")
+        if not vendor_number:
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": "Vendor number is required as a query parameter",
+                    }
+                ),
+                400,
+            )
+
         # Pass the report to WhatsAppNotifier
         notifier = WhatsAppNotifier()
-        success = notifier.notify_vendor(vendor_number, report_data)
+        success = notifier.notify_vendor("+919326445840", report_data)
 
         if not success:
             return (
