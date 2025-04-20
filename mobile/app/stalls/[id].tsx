@@ -683,32 +683,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 8,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContainer: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 16,
-    maxHeight: '80%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
   modalContent: {
     padding: 16,
   },
@@ -1050,7 +1024,7 @@ const StallPage = () => {
           </View>
 
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{stallData.hygiene_score}</Text>
+            <Text style={styles.statValue}>{stallData.hygieneScore}</Text>
             <View style={styles.statRatingStars}>
               {Array(5)
                 .fill(0)
@@ -1060,7 +1034,7 @@ const StallPage = () => {
                     name="star"
                     size={14}
                     color={
-                      i < Math.floor(stallData.hygiene_score)
+                      i < Math.floor(stallData.hygieneScore)
                         ? '#4CAF50'
                         : '#e0e0e0'
                     }
@@ -1181,8 +1155,8 @@ const StallPage = () => {
   const renderMenuItem = ({ item }: { item: (typeof MENU_ITEMS)[0] }) => {
     const processedItem = {
       ...item,
-      image: item.image_url,
-      isVeg: item.traits?.type?.toLowerCase() === 'vegetarian',
+      image: item.image,
+      isVeg: item.isVeg=== true,
     }
     return (
       <View style={styles.menuItem}>
@@ -1239,14 +1213,14 @@ const StallPage = () => {
               <Image
                 source={{
                   uri:
-                    review.user_image ||
+                    review.userImage ||
                     'https://cdn-icons-png.flaticon.com/512/149/149071.png', // fallback avatar
                 }}
                 style={styles.reviewerImage}
               />
               <View style={styles.reviewerDetails}>
                 <Text style={styles.reviewerName}>
-                  {review.user_name || 'Anonymous'}
+                  {review.userName || 'Anonymous'}
                 </Text>
                 <View style={styles.reviewRatingRow}>
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -1258,12 +1232,12 @@ const StallPage = () => {
                     />
                   ))}
                   <Text style={styles.reviewDate}>
-                    {new Date(review.created_at).toLocaleDateString()}
+                    {new Date(review.date).toLocaleDateString()}
                   </Text>
                 </View>
               </View>
             </View>
-            <Text style={styles.reviewText}>{review.review_text}</Text>
+            <Text style={styles.reviewText}>{review.comment}</Text>
           </View>
         ))}
 
@@ -1421,7 +1395,7 @@ const StallPage = () => {
               <View style={styles.hygieneScoreContainer}>
                 <View style={styles.hygieneScoreCircle}>
                   <Text style={styles.hygieneScoreText}>
-                    {stallData.hygiene_score}
+                    {stallData.hygieneScore}
                   </Text>
                   <Text style={styles.hygieneScoreLabel}>out of 5</Text>
                 </View>

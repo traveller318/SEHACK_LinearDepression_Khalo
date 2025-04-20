@@ -144,7 +144,7 @@ export default function Onboarding() {
 
   return (
     <AnimatedLinearGradient
-      colors={['#0066ff', '#003380']}
+      colors={['#FF9A5A', '#FF5200']}
       style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
     >
       <FlatList
@@ -188,7 +188,7 @@ export default function Onboarding() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0066ff',
+    backgroundColor: '#FF8C00',
   },
   slide: {
     flex: 1,
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   description: {
     fontFamily: 'Poppins',
     fontSize: 16,
-    color: '#e6f0ff',
+    color: '#fff5e6',
     textAlign: 'center',
     lineHeight: 24,
     maxWidth: '85%',
@@ -260,12 +260,12 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   nextIcon: {
-    color: '#0066ff',
+    color: '#FF5200',
     fontSize: 24,
     fontFamily: 'Poppins-SemiBold',
   },
   getStartedText: {
-    color: '#0066ff',
+    color: '#FF5200',
     fontSize: 16,
     fontFamily: 'Poppins-SemiBold',
   },

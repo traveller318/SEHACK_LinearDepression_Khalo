@@ -339,15 +339,7 @@ export default function DashboardScreen() {
             <MaterialIcons name="keyboard-arrow-down" size={24} color="#333" />
           </View>
           <View style={styles.headerIcons}>
-            <TouchableOpacity
-              style={styles.filterIcon}
-              onPress={toggleFilterModal}
-            >
-              <MaterialIcons name="filter-list" size={24} color="#333" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.cartIcon}>
-              <MaterialIcons name="shopping-cart" size={24} color="#333" />
-            </TouchableOpacity>
+           
             <TouchableOpacity style={styles.notificationIcon}>
               <MaterialIcons name="notifications" size={24} color="#333" />
               <View style={styles.notificationBadge}>

@@ -1,8 +1,7 @@
 import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, FlatList, Modal, TextInput, Alert, ActivityIndicator, ScrollView, Animated, Easing, Image, PanResponder } from 'react-native';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons, Ionicons, FontAwesome, AntDesign, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import Slider from '@react-native-community/slider';
 import * as Location from 'expo-location';
 import { useAuth } from '../../contexts/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,6 +27,294 @@ type Post = {
   userVote?: 'up' | 'down' | null;
   comments?: Comment[];
 };
+
+// Create a dedicated Post component to fix the hooks issue
+const PostItem = React.memo(({ item, index, handleVote, formatDate, toggleComments, showComments }: 
+  { item: Post; index: number; handleVote: Function; formatDate: Function; toggleComments: Function; showComments: {[key: string]: boolean} }) => {
+  // Create staggered animation for each item
+  const itemFadeAnim = useRef(new Animated.Value(0)).current;
+  const itemTranslateY = useRef(new Animated.Value(50)).current;
+  const swipeAnim = useRef(new Animated.Value(0)).current;
+  
+  // Add swipe functionality for like/dislike
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gestureState) => {
+        // Only allow horizontal swiping up to a limit
+        if (Math.abs(gestureState.dx) < 100) {
+          swipeAnim.setValue(gestureState.dx);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        // Threshold for triggering actions
+        if (gestureState.dx > 80) {
+          // Swiped right - like
+          Animated.timing(swipeAnim, {
+            toValue: 100,
+            duration: 200,
+            useNativeDriver: true,
+          }).start(() => {
+            handleVote(item.id, 'up');
+            Animated.timing(swipeAnim, {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }).start();
+          });
+        } else if (gestureState.dx < -80) {
+          // Swiped left - dislike
+          Animated.timing(swipeAnim, {
+            toValue: -100,
+            duration: 200,
+            useNativeDriver: true,
+          }).start(() => {
+            handleVote(item.id, 'down');
+            Animated.timing(swipeAnim, {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }).start();
+          });
+        } else {
+          // Return to center
+          Animated.spring(swipeAnim, {
+            toValue: 0,
+            friction: 5,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
+  
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(itemFadeAnim, {
+        toValue: 1,
+        duration: 500,
+        delay: index * 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(itemTranslateY, {
+        toValue: 0,
+        duration: 400,
+        delay: index * 100,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
+
+  // Calculate background colors and rotation based on swipe
+  const rotateCard = swipeAnim.interpolate({
+    inputRange: [-100, 0, 100],
+    outputRange: ['-5deg', '0deg', '5deg'],
+  });
+  
+  const likeOpacity = swipeAnim.interpolate({
+    inputRange: [0, 20, 100],
+    outputRange: [0, 0.5, 1],
+    extrapolate: 'clamp',
+  });
+  
+  const dislikeOpacity = swipeAnim.interpolate({
+    inputRange: [-100, -20, 0],
+    outputRange: [1, 0.5, 0],
+    extrapolate: 'clamp',
+  });
+  
+  return (
+    <Animated.View 
+      style={[
+        styles.postCard,
+        {
+          opacity: itemFadeAnim,
+          transform: [
+            { translateY: itemTranslateY },
+            { translateX: swipeAnim },
+            { rotate: rotateCard }
+          ]
+        }
+      ]}
+      {...panResponder.panHandlers}
+    >
+      {/* Swipe Indicators */}
+      <Animated.View style={[styles.likeIndicator, { opacity: likeOpacity }]}>
+        <AntDesign name="like1" size={40} color="#FF5200" />
+      </Animated.View>
+      
+      <Animated.View style={[styles.dislikeIndicator, { opacity: dislikeOpacity }]}>
+        <AntDesign name="dislike1" size={40} color="#666" />
+      </Animated.View>
+      
+      {/* Post Header with User Info */}
+      <View style={styles.userInfoContainer}>
+        <LinearGradient
+          colors={['#FF8A5B', '#FF5200']}
+          style={styles.userAvatar}
+        >
+          <Text style={styles.userInitial}>{(item.user_name?.[0] || 'U').toUpperCase()}</Text>
+        </LinearGradient>
+        <View style={styles.userTextContainer}>
+          <Text style={styles.userName}>{item.user_name || 'Anonymous User'}</Text>
+          <View style={styles.postMetaContainer}>
+            <Text style={styles.timeAgo}>{formatDate(item.created_at)}</Text>
+            {item.distance !== undefined && (
+              <View style={styles.distanceBadge}>
+                <Feather name="map-pin" size={10} color="#666" />
+                <Text style={styles.distanceText}>{item.distance.toFixed(1)} km</Text>
+              </View>
+            )}
+          </View>
+        </View>
+        <TouchableOpacity style={styles.moreOptionsButton}>
+          <MaterialCommunityIcons name="dots-vertical" size={22} color="#666" />
+        </TouchableOpacity>
+      </View>
+      
+      {/* Post Title and Content */}
+      <View style={styles.postContentContainer}>
+        <Text style={styles.postTitle}>{item.title}</Text>
+        <Text style={styles.postContent}>{item.content}</Text>
+      </View>
+      
+      {/* Tags */}
+      {item.tags && item.tags.length > 0 && (
+        <View style={styles.tagsContainer}>
+          {item.tags.map((tag, index) => (
+            <View 
+              key={index} 
+              style={[
+                styles.tag,
+                (tag === 'Important' || tag === 'important') && styles.importantTag
+              ]}
+            >
+              {(tag === 'Important' || tag === 'important') && (
+                <MaterialIcons name="priority-high" size={12} color="#FF5200" style={{marginRight: 4}} />
+              )}
+              <Text 
+                style={[
+                  styles.tagText,
+                  (tag === 'Important' || tag === 'important') && styles.importantTagText
+                ]}
+              >
+                {tag}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+      
+      {/* Post Actions */}
+      <View style={styles.postActions}>
+        <View style={styles.voteContainer}>
+          <TouchableOpacity 
+            style={[styles.voteButton, item.userVote === 'up' && styles.activeVoteButton]}
+            onPress={() => handleVote(item.id, 'up')}
+          >
+            <AntDesign 
+              name="like1" 
+              size={20} 
+              color={item.userVote === 'up' ? '#FF5200' : '#666'} 
+            />
+            <Text style={[styles.voteCount, item.userVote === 'up' && styles.activeVote]}>
+              {item.upvotes || 0}
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.voteButton, item.userVote === 'down' && styles.activeVoteButton]}
+            onPress={() => handleVote(item.id, 'down')}
+          >
+            <AntDesign 
+              name="dislike1" 
+              size={20} 
+              color={item.userVote === 'down' ? '#FF5200' : '#666'} 
+            />
+            <Text style={[styles.voteCount, item.userVote === 'down' && styles.activeVote]}>
+              {item.downvotes || 0}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        
+        <TouchableOpacity 
+          style={[
+            styles.commentButton,
+            showComments[item.id] && styles.activeCommentButton
+          ]}
+          onPress={() => toggleComments(item.id)}
+        >
+          <FontAwesome 
+            name="comment" 
+            size={18} 
+            color={showComments[item.id] ? "#FF5200" : "#666"} 
+          />
+          <Text style={[
+            styles.commentCount,
+            showComments[item.id] && styles.activeCommentCount
+          ]}>
+            {item.comments?.length || 0} Comments
+          </Text>
+        </TouchableOpacity>
+      </View>
+      
+      {/* Comments Section */}
+      {showComments[item.id] && item.comments && (
+        <View style={styles.commentsSection}>
+          <View style={styles.commentsDivider} />
+          <Text style={styles.commentsHeader}>Comments</Text>
+          
+          {item.comments.map((comment) => (
+            <View key={comment.id} style={styles.commentItem}>
+              <View style={styles.commentUserInfo}>
+                <LinearGradient
+                  colors={['#F0F0F0', '#E0E0E0']}
+                  style={styles.commentUserAvatar}
+                >
+                  <Text style={styles.commentUserInitial}>
+                    {comment.user_name[0].toUpperCase()}
+                  </Text>
+                </LinearGradient>
+                <View style={styles.commentUserTextContainer}>
+                  <Text style={styles.commentUser}>{comment.user_name}</Text>
+                  <Text style={styles.commentTime}>{formatDate(comment.created_at)}</Text>
+                </View>
+              </View>
+              <View style={styles.commentContentContainer}>
+                <Text style={styles.commentContent}>{comment.content}</Text>
+              </View>
+              <View style={styles.commentActions}>
+                <TouchableOpacity style={styles.commentLikeButton}>
+                  <AntDesign name="like2" size={14} color="#777" />
+                  <Text style={styles.commentActionText}>Like</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.commentReplyButton}>
+                  <Feather name="corner-up-left" size={14} color="#777" />
+                  <Text style={styles.commentActionText}>Reply</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+          
+          {/* Add Comment Input */}
+          <View style={styles.addCommentContainer}>
+            <View style={styles.commentInputContainer}>
+              <TextInput
+                style={styles.commentInput}
+                placeholder="Add a comment..."
+                placeholderTextColor="#999"
+              />
+            </View>
+            <TouchableOpacity style={styles.sendCommentButton}>
+              <Ionicons name="send" size={18} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+    </Animated.View>
+  );
+});
 
 export default function CommunityScreen() {
   const insets = useSafeAreaInsets();
@@ -87,23 +374,48 @@ export default function CommunityScreen() {
 
   useEffect(() => {
     (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setError('Permission to access location was denied');
-        setLoading(false);
-        return;
-      }
-
       try {
-        const location = await Location.getCurrentPositionAsync({});
-        setLocation({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        });
-        fetchNearbyPosts(location.coords.latitude, location.coords.longitude, radius);
-      } catch (err) {
-        setError('Could not fetch location');
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          console.log('Location permission not granted');
+          setError('Permission to access location was denied');
+          setLoading(false);
+          // Load demo data if location access denied
+          loadDemoData();
+          return;
+        }
+
+        try {
+          const location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,  // Lower accuracy for faster results
+            timeInterval: 5000 // Limit how often to poll for location updates
+          });
+          setLocation({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          });
+          
+          try {
+            // Try to fetch from API
+            await fetchNearbyPosts(location.coords.latitude, location.coords.longitude, radius);
+          } catch (apiError) {
+            console.error('API fetch error:', apiError);
+            // Load demo data if API fetch fails
+            loadDemoData();
+          }
+        } catch (locationError) {
+          console.error('Location fetch error:', locationError);
+          setError('Could not fetch location');
+          setLoading(false);
+          // Load demo data if location fetch fails
+          loadDemoData();
+        }
+      } catch (mainError) {
+        console.error('Fatal error:', mainError);
+        setError('An unexpected error occurred');
         setLoading(false);
+        // Load demo data for any unexpected error
+        loadDemoData();
       }
     })();
   }, []);
@@ -111,7 +423,8 @@ export default function CommunityScreen() {
   const fetchNearbyPosts = async (lat: number, lng: number, radius: number) => {
     setLoading(true);
     try {
-      const response = await fetch('https://khalo-r5v5.onrender.com/community/getNearbyPosts', {
+      // Add a timeout to the fetch to prevent it hanging forever
+      const fetchPromise = fetch('https://khalo-r5v5.onrender.com/community/getNearbyPosts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -122,18 +435,33 @@ export default function CommunityScreen() {
           radius: radius * 1000, // Convert km to meters
         }),
       });
+      
+      // Set a timeout to abort the fetch if it takes too long
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timed out')), 10000)
+      );
+      
+      // Race the fetch against the timeout
+      const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
 
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error(`Network response was not ok: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log(data);
+      console.log('API response:', data);
       
-      setPosts(data);
+      if (Array.isArray(data) && data.length > 0) {
+        setPosts(data);
+      } else {
+        // If the API returns empty data, use demo data
+        loadDemoData();
+      }
     } catch (error) {
       console.error('Error fetching posts:', error);
       setError('Failed to fetch posts');
+      // Load demo data if fetch fails
+      loadDemoData();
     } finally {
       setLoading(false);
     }
@@ -301,6 +629,86 @@ export default function CommunityScreen() {
     }));
   };
 
+  // Add a function to load demo data
+  const loadDemoData = () => {
+    console.log('Loading demo data');
+    const demoData: Post[] = [
+      {
+        id: 'demo1',
+        title: 'Best Food Places Nearby',
+        content: 'Has anyone tried the new pizza place on Main Street? Their Margherita pizza is incredible!',
+        user_name: 'FoodLover',
+        tags: ['Food', 'Restaurants', 'Local'],
+        created_at: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+        upvotes: 24,
+        downvotes: 2,
+        distance: 1.2,
+        comments: [
+          {
+            id: 'comment1-demo1',
+            user_name: 'User1',
+            content: 'Yes! I went there last week. Their pasta is amazing too!',
+            created_at: new Date(Date.now() - 1800000).toISOString() // 30 mins ago
+          },
+          {
+            id: 'comment2-demo1',
+            user_name: 'User2',
+            content: 'Thanks for the recommendation. Will check it out this weekend.',
+            created_at: new Date(Date.now() - 900000).toISOString() // 15 mins ago
+          }
+        ]
+      },
+      {
+        id: 'demo2',
+        title: 'Community Cleanup This Weekend',
+        content: 'Join us for a community cleanup at City Park this Saturday morning. Bring gloves and trash bags!',
+        user_name: 'GreenEarth',
+        tags: ['Community', 'Environment', 'Important'],
+        created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+        upvotes: 45,
+        downvotes: 0,
+        distance: 0.8,
+        comments: [
+          {
+            id: 'comment1-demo2',
+            user_name: 'User3',
+            content: 'Count me in! What time does it start?',
+            created_at: new Date(Date.now() - 43200000).toISOString() // 12 hours ago
+          }
+        ]
+      },
+      {
+        id: 'demo3',
+        title: 'Lost Dog in West Area',
+        content: 'My Golden Retriever got loose near West Park yesterday. He responds to "Max" and has a blue collar. Please contact if spotted!',
+        user_name: 'PetLover',
+        tags: ['Lost', 'Pets', 'Important'],
+        created_at: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+        upvotes: 62,
+        downvotes: 0,
+        distance: 1.5,
+        comments: [
+          {
+            id: 'comment1-demo3',
+            user_name: 'User4',
+            content: 'I think I saw a golden retriever near the coffee shop on Elm Street about an hour ago.',
+            created_at: new Date(Date.now() - 3600000).toISOString() // 1 hour ago
+          },
+          {
+            id: 'comment2-demo3',
+            user_name: 'User5',
+            content: 'Hope you find your dog soon! Will keep an eye out.',
+            created_at: new Date(Date.now() - 86400000).toISOString() // 1 day ago
+          }
+        ]
+      }
+    ];
+    setPosts(demoData);
+    setFilteredPosts(demoData);
+    setLoading(false);
+    setError('');
+  };
+
   // Add sample posts for each category
   useEffect(() => {
     if (posts.length > 0 && !loading) {
@@ -384,416 +792,157 @@ export default function CommunityScreen() {
     }
   }, [activeCategory, posts]);
 
-  const renderPost = ({ item, index }: { item: Post; index: number }) => {
-    // Create staggered animation for each item
-    const itemFadeAnim = useRef(new Animated.Value(0)).current;
-    const itemTranslateY = useRef(new Animated.Value(50)).current;
-    const swipeAnim = useRef(new Animated.Value(0)).current;
-    
-    // Add swipe functionality for like/dislike
-    const panResponder = useRef(
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onPanResponderMove: (_, gestureState) => {
-          // Only allow horizontal swiping up to a limit
-          if (Math.abs(gestureState.dx) < 100) {
-            swipeAnim.setValue(gestureState.dx);
-          }
-        },
-        onPanResponderRelease: (_, gestureState) => {
-          // Threshold for triggering actions
-          if (gestureState.dx > 80) {
-            // Swiped right - like
-            Animated.timing(swipeAnim, {
-              toValue: 100,
-              duration: 200,
-              useNativeDriver: true,
-            }).start(() => {
-              handleVote(item.id, 'up');
-              Animated.timing(swipeAnim, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: true,
-              }).start();
-            });
-          } else if (gestureState.dx < -80) {
-            // Swiped left - dislike
-            Animated.timing(swipeAnim, {
-              toValue: -100,
-              duration: 200,
-              useNativeDriver: true,
-            }).start(() => {
-              handleVote(item.id, 'down');
-              Animated.timing(swipeAnim, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: true,
-              }).start();
-            });
-          } else {
-            // Return to center
-            Animated.spring(swipeAnim, {
-              toValue: 0,
-              friction: 5,
-              useNativeDriver: true,
-            }).start();
-          }
-        },
-      })
-    ).current;
-    
-    useEffect(() => {
-      Animated.parallel([
-        Animated.timing(itemFadeAnim, {
-          toValue: 1,
-          duration: 500,
-          delay: index * 100,
-          useNativeDriver: true,
-        }),
-        Animated.timing(itemTranslateY, {
-          toValue: 0,
-          duration: 400,
-          delay: index * 100,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        })
-      ]).start();
-    }, []);
-
-    // Calculate background colors and rotation based on swipe
-    const rotateCard = swipeAnim.interpolate({
-      inputRange: [-100, 0, 100],
-      outputRange: ['-5deg', '0deg', '5deg'],
-    });
-    
-    const likeOpacity = swipeAnim.interpolate({
-      inputRange: [0, 20, 100],
-      outputRange: [0, 0.5, 1],
-      extrapolate: 'clamp',
-    });
-    
-    const dislikeOpacity = swipeAnim.interpolate({
-      inputRange: [-100, -20, 0],
-      outputRange: [1, 0.5, 0],
-      extrapolate: 'clamp',
-    });
-    
+  // Replace the renderPost function with this
+  const renderPost = useCallback(({ item, index }: { item: Post; index: number }) => {
     return (
-      <Animated.View 
-        style={[
-          styles.postCard,
-          {
-            opacity: itemFadeAnim,
-            transform: [
-              { translateY: itemTranslateY },
-              { translateX: swipeAnim },
-              { rotate: rotateCard }
-            ]
-          }
-        ]}
-        {...panResponder.panHandlers}
-      >
-        {/* Swipe Indicators */}
-        <Animated.View style={[styles.likeIndicator, { opacity: likeOpacity }]}>
-          <AntDesign name="like1" size={40} color="#FF5200" />
-        </Animated.View>
-        
-        <Animated.View style={[styles.dislikeIndicator, { opacity: dislikeOpacity }]}>
-          <AntDesign name="dislike1" size={40} color="#666" />
-        </Animated.View>
-        
-        {/* Post Header with User Info */}
-        <View style={styles.userInfoContainer}>
-          <LinearGradient
-            colors={['#FF8A5B', '#FF5200']}
-            style={styles.userAvatar}
-          >
-            <Text style={styles.userInitial}>{(item.user_name?.[0] || 'U').toUpperCase()}</Text>
-          </LinearGradient>
-          <View style={styles.userTextContainer}>
-            <Text style={styles.userName}>{item.user_name || 'Anonymous User'}</Text>
-            <View style={styles.postMetaContainer}>
-              <Text style={styles.timeAgo}>{formatDate(item.created_at)}</Text>
-              {item.distance !== undefined && (
-                <View style={styles.distanceBadge}>
-                  <Feather name="map-pin" size={10} color="#666" />
-                  <Text style={styles.distanceText}>{item.distance.toFixed(1)} km</Text>
-                </View>
-              )}
-            </View>
-          </View>
-          <TouchableOpacity style={styles.moreOptionsButton}>
-            <MaterialCommunityIcons name="dots-vertical" size={22} color="#666" />
-          </TouchableOpacity>
-        </View>
-        
-        {/* Post Title and Content */}
-        <View style={styles.postContentContainer}>
-          <Text style={styles.postTitle}>{item.title}</Text>
-          <Text style={styles.postContent}>{item.content}</Text>
-        </View>
-        
-        {/* Tags */}
-        {item.tags && item.tags.length > 0 && (
-          <View style={styles.tagsContainer}>
-            {item.tags.map((tag, index) => (
-              <View 
-                key={index} 
-                style={[
-                  styles.tag,
-                  (tag === 'Important' || tag === 'important') && styles.importantTag
-                ]}
-              >
-                {(tag === 'Important' || tag === 'important') && (
-                  <MaterialIcons name="priority-high" size={12} color="#FF5200" style={{marginRight: 4}} />
-                )}
-                <Text 
-                  style={[
-                    styles.tagText,
-                    (tag === 'Important' || tag === 'important') && styles.importantTagText
-                  ]}
-                >
-                  {tag}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-        
-        {/* Post Actions */}
-        <View style={styles.postActions}>
-          <View style={styles.voteContainer}>
-            <TouchableOpacity 
-              style={[styles.voteButton, item.userVote === 'up' && styles.activeVoteButton]}
-              onPress={() => handleVote(item.id, 'up')}
-            >
-              <AntDesign 
-                name="like1" 
-                size={20} 
-                color={item.userVote === 'up' ? '#FF5200' : '#666'} 
-              />
-              <Text style={[styles.voteCount, item.userVote === 'up' && styles.activeVote]}>
-                {item.upvotes || 0}
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.voteButton, item.userVote === 'down' && styles.activeVoteButton]}
-              onPress={() => handleVote(item.id, 'down')}
-            >
-              <AntDesign 
-                name="dislike1" 
-                size={20} 
-                color={item.userVote === 'down' ? '#FF5200' : '#666'} 
-              />
-              <Text style={[styles.voteCount, item.userVote === 'down' && styles.activeVote]}>
-                {item.downvotes || 0}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          
-          <TouchableOpacity 
-            style={[
-              styles.commentButton,
-              showComments[item.id] && styles.activeCommentButton
-            ]}
-            onPress={() => toggleComments(item.id)}
-          >
-            <FontAwesome 
-              name="comment" 
-              size={18} 
-              color={showComments[item.id] ? "#FF5200" : "#666"} 
-            />
-            <Text style={[
-              styles.commentCount,
-              showComments[item.id] && styles.activeCommentCount
-            ]}>
-              {item.comments?.length || 0} Comments
-            </Text>
-          </TouchableOpacity>
-        </View>
-        
-        {/* Comments Section */}
-        {showComments[item.id] && item.comments && (
-          <View style={styles.commentsSection}>
-            <View style={styles.commentsDivider} />
-            <Text style={styles.commentsHeader}>Comments</Text>
-            
-            {item.comments.map((comment) => (
-              <View key={comment.id} style={styles.commentItem}>
-                <View style={styles.commentUserInfo}>
-                  <LinearGradient
-                    colors={['#F0F0F0', '#E0E0E0']}
-                    style={styles.commentUserAvatar}
-                  >
-                    <Text style={styles.commentUserInitial}>
-                      {comment.user_name[0].toUpperCase()}
-                    </Text>
-                  </LinearGradient>
-                  <View style={styles.commentUserTextContainer}>
-                    <Text style={styles.commentUser}>{comment.user_name}</Text>
-                    <Text style={styles.commentTime}>{formatDate(comment.created_at)}</Text>
-                  </View>
-                </View>
-                <View style={styles.commentContentContainer}>
-                  <Text style={styles.commentContent}>{comment.content}</Text>
-                </View>
-                <View style={styles.commentActions}>
-                  <TouchableOpacity style={styles.commentLikeButton}>
-                    <AntDesign name="like2" size={14} color="#777" />
-                    <Text style={styles.commentActionText}>Like</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.commentReplyButton}>
-                    <Feather name="corner-up-left" size={14} color="#777" />
-                    <Text style={styles.commentActionText}>Reply</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
-            
-            {/* Add Comment Input */}
-            <View style={styles.addCommentContainer}>
-              <View style={styles.commentInputContainer}>
-                <TextInput
-                  style={styles.commentInput}
-                  placeholder="Add a comment..."
-                  placeholderTextColor="#999"
-                />
-              </View>
-              <TouchableOpacity style={styles.sendCommentButton}>
-                <Ionicons name="send" size={18} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      </Animated.View>
+      <PostItem 
+        item={item} 
+        index={index} 
+        handleVote={handleVote} 
+        formatDate={formatDate} 
+        toggleComments={toggleComments} 
+        showComments={showComments}
+      />
     );
-  };
+  }, [showComments]);
 
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header with Animated Background */}
-      <Animated.View 
-        style={[
-          styles.header,
-          {
-            opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }],
-          }
-        ]}
-      >
-        <LinearGradient
-          colors={['#FF8A5B', '#FF5200']}
-          start={[0, 0]}
-          end={[1, 0]}
-          style={styles.headerGradient}
+      {/* Fixed header section - will not scroll */}
+      <View style={styles.fixedHeaderContainer}>
+        {/* Header with Animated Background */}
+        <Animated.View 
+          style={[
+            styles.header,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }],
+            }
+          ]}
         >
-          <Text style={styles.headerTitle}>Community</Text>
-        </LinearGradient>
-      </Animated.View>
+          <LinearGradient
+            colors={['#FF8A5B', '#FF5200']}
+            start={[0, 0]}
+            end={[1, 0]}
+            style={styles.headerGradient}
+          >
+            <Text style={styles.headerTitle}>Community</Text>
+          </LinearGradient>
+        </Animated.View>
 
-      {/* Radius Selector with improved UI */}
-      <Animated.View 
-        style={[
-          styles.radiusContainer,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: Animated.multiply(scrollY, 0.1) }],
-          }
-        ]}
-      >
-        <View style={styles.radiusLabelContainer}>
-          <MaterialIcons name="explore" size={20} color="#FF5200" />
-          <Text style={styles.radiusLabel}>Discovery Radius: {radius} km</Text>
-        </View>
-        <Slider
-          style={styles.slider}
-          minimumValue={1}
-          maximumValue={10}
-          step={1}
-          value={radius}
-          onValueChange={handleRadiusChange}
-          minimumTrackTintColor="#FF5200"
-          maximumTrackTintColor="#FFDED0"
-          thumbTintColor="#FF5200"
-        />
-        <View style={styles.radiusMinMaxContainer}>
-          <Text style={styles.radiusMinText}>1 km</Text>
-          <Text style={styles.radiusMaxText}>10 km</Text>
-        </View>
-      </Animated.View>
-
-      {/* Category Tabs with improved UI */}
-      <View style={styles.categoryTabsContainer}>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryTabs}
+        {/* Replace Radius Selector with button-based design */}
+        <Animated.View 
+          style={[
+            styles.radiusContainer,
+            {
+              opacity: fadeAnim,
+              // Remove transform that was tied to scroll
+            }
+          ]}
         >
-          {['Recent', 'Most Liked', 'Important', 'Others'].map((category) => (
-            <TouchableOpacity
-              key={category}
-              style={[
-                styles.categoryTab,
-                activeCategory === category && styles.activeTab
-              ]}
-              onPress={() => setActiveCategory(category)}
-            >
-              <Text 
+          <View style={styles.radiusLabelContainer}>
+            <MaterialIcons name="explore" size={20} color="#FF5200" />
+            <Text style={styles.radiusLabel}>Discovery Radius</Text>
+          </View>
+          
+          <View style={styles.radiusButtonsContainer}>
+            {[1, 2, 3, 5, 10].map((value) => (
+              <TouchableOpacity
+                key={value}
                 style={[
-                  styles.categoryTabText,
-                  activeCategory === category && styles.activeTabText
+                  styles.radiusButton,
+                  radius === value && styles.radiusButtonActive
                 ]}
+                onPress={() => handleRadiusChange(value)}
               >
-                {category}
-              </Text>
-              {activeCategory === category && (
-                <View style={styles.activeTabIndicator} />
-              )}
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                <Text 
+                  style={[
+                    styles.radiusButtonText,
+                    radius === value && styles.radiusButtonTextActive
+                  ]}
+                >
+                  {value} km
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </Animated.View>
+
+        {/* Category Tabs with improved UI */}
+        <View style={styles.categoryTabsContainer}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryTabs}
+          >
+            {['Recent', 'Most Liked', 'Important', 'Others'].map((category) => (
+              <TouchableOpacity
+                key={category}
+                style={[
+                  styles.categoryTab,
+                  activeCategory === category && styles.activeTab
+                ]}
+                onPress={() => setActiveCategory(category)}
+              >
+                <Text 
+                  style={[
+                    styles.categoryTabText,
+                    activeCategory === category && styles.activeTabText
+                  ]}
+                >
+                  {category}
+                </Text>
+                {activeCategory === category && (
+                  <View style={styles.activeTabIndicator} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
       </View>
 
-      {/* Posts List */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FF5200" />
-          <Text style={styles.loadingText}>Loading posts...</Text>
-        </View>
-      ) : error ? (
-        <View style={styles.errorContainer}>
-          <MaterialIcons name="error-outline" size={60} color="#FF5200" style={{marginBottom: 16}} />
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity 
-            style={styles.retryButton}
-            onPress={() => location && fetchNearbyPosts(location.latitude, location.longitude, radius)}
-          >
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      ) : filteredPosts.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Image 
-            source={{uri: 'https://cdn-icons-png.flaticon.com/512/6134/6134065.png'}} 
-            style={styles.emptyImage}
+      {/* Scrollable content - only the posts will scroll */}
+      <View style={styles.scrollableContent}>
+        {/* Posts List */}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FF5200" />
+            <Text style={styles.loadingText}>Loading posts...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <MaterialIcons name="error-outline" size={60} color="#FF5200" style={{marginBottom: 16}} />
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity 
+              style={styles.retryButton}
+              onPress={() => location && fetchNearbyPosts(location.latitude, location.longitude, radius)}
+            >
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : filteredPosts.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Image 
+              source={{uri: 'https://cdn-icons-png.flaticon.com/512/6134/6134065.png'}} 
+              style={styles.emptyImage}
+            />
+            <Text style={styles.emptyText}>No posts in this category</Text>
+            <Text style={styles.emptySubText}>Try selecting a different category or be the first to post!</Text>
+          </View>
+        ) : (
+          <Animated.FlatList
+            data={filteredPosts}
+            renderItem={renderPost}
+            keyExtractor={item => item.id}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.postsList}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: false }
+            )}
           />
-          <Text style={styles.emptyText}>No posts in this category</Text>
-          <Text style={styles.emptySubText}>Try selecting a different category or be the first to post!</Text>
-        </View>
-      ) : (
-        <Animated.FlatList
-          data={filteredPosts}
-          renderItem={renderPost}
-          keyExtractor={item => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.postsList}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: false }
-          )}
-        />
-      )}
+        )}
+      </View>
       
       {/* Create Post Modal */}
       <Modal
@@ -949,6 +1098,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f8f8',
   },
+  fixedHeaderContainer: {
+    backgroundColor: '#f8f8f8',
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  scrollableContent: {
+    flex: 1,
+  },
   header: {
     marginBottom: 16,
   },
@@ -976,7 +1137,7 @@ const styles = StyleSheet.create({
   },
   radiusContainer: {
     paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingVertical: 18,
     backgroundColor: 'white',
     marginHorizontal: 16,
     marginBottom: 16,
@@ -990,7 +1151,7 @@ const styles = StyleSheet.create({
   radiusLabelContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 16,
   },
   radiusLabel: {
     fontSize: 16,
@@ -998,22 +1159,34 @@ const styles = StyleSheet.create({
     color: '#333',
     marginLeft: 8,
   },
-  slider: {
-    width: '100%',
-    height: 40,
-  },
-  radiusMinMaxContainer: {
+  radiusButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: -8,
+    alignItems: 'center',
   },
-  radiusMinText: {
-    fontSize: 12,
-    color: '#999',
+  radiusButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
+    marginHorizontal: 4,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    minWidth: 58,
+    alignItems: 'center',
   },
-  radiusMaxText: {
-    fontSize: 12,
-    color: '#999',
+  radiusButtonActive: {
+    backgroundColor: '#FFF0EB',
+    borderColor: '#FF5200',
+  },
+  radiusButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+  },
+  radiusButtonTextActive: {
+    color: '#FF5200',
+    fontWeight: 'bold',
   },
   categoryTabsContainer: {
     backgroundColor: 'white',
