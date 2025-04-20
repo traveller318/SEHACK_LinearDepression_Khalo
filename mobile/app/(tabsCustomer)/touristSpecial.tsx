@@ -59,6 +59,16 @@ type FoodStop = {
   longitude: number;
 };
 
+type CulturalByte = {
+  id: string;
+  type: 'fun_fact' | 'vendor_story' | 'did_you_know';
+  title: string;
+  content: string;
+  image: string;
+  relatedPlace?: string; // Optionally related to a place in the itinerary
+  emoji: string;
+};
+
 export default function TouristSpecialScreen() {
   const insets = useSafeAreaInsets();
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -192,6 +202,69 @@ export default function TouristSpecialScreen() {
           longitude: 72.8278,
         },
       ],
+    },
+  ];
+
+  // Cultural Bytes data for Mumbai food culture
+  const culturalBytes: CulturalByte[] = [
+    {
+      id: 'byte-1',
+      type: 'fun_fact',
+      title: 'Birth of Vada Pav',
+      content: "Vada Pav was invented in 1966 by Ashok Vaidya near Dadar Station as a quick, inexpensive meal for textile mill workers. It\u2019s now Mumbai\u2019s most iconic street food!",
+      image: 'https://images.unsplash.com/photo-1528890287845-6b7527f5290d?ixlib=rb-4.0.3',
+      relatedPlace: 'Ashok Vada Pav',
+      emoji: '🍔',
+    },
+    {
+      id: 'byte-2',
+      type: 'vendor_story',
+      title: 'Meet Harshad Kaka',
+      content: "For 47 years, Harshad Kaka has been making the same pav bhaji recipe at Juhu Beach. \"My secret? The butter must be added three times during cooking, not just once like others do.\"",
+      image: 'https://images.unsplash.com/photo-1484851200751-8a89d94aacd1?ixlib=rb-4.0.3',
+      relatedPlace: 'Juhu Beach Chaat',
+      emoji: '👨‍🍳',
+    },
+    {
+      id: 'byte-3',
+      type: 'did_you_know',
+      title: 'Bhel Puri\u2019s Ocean Origin',
+      content: "Did you know? Bhel puri was originally created by beach vendors who needed a dish that could be made without cooking facilities. The mix of textures mimics the sounds of ocean waves!",
+      image: 'https://images.unsplash.com/photo-1606050627722-3646950540ca?ixlib=rb-4.0.3',
+      emoji: '🌊',
+    },
+    {
+      id: 'byte-4',
+      type: 'fun_fact',
+      title: 'The Irani Café Legacy',
+      content: "Mumbai\u2019s Irani cafés were started by Persian immigrants in the 19th century. They introduced bun maska (buttered bread) and Irani chai which became breakfast staples for generations of Mumbaikars.",
+      image: 'https://images.unsplash.com/photo-1602374861327-c9688409bd33?ixlib=rb-4.0.3',
+      relatedPlace: 'Kyani & Co.',
+      emoji: '☕',
+    },
+    {
+      id: 'byte-5',
+      type: 'vendor_story',
+      title: 'Pani Puri with a PhD',
+      content: "Dr. Madhu Shetty left her corporate job to preserve her grandmother\u2019s authentic pani puri recipe. \"The secret lies in the five-spice blend aged in clay pots for 30 days. No shortcuts!\"",
+      image: 'https://images.unsplash.com/photo-1602296750425-f025b045f355?ixlib=rb-4.0.3',
+      emoji: '🧪',
+    },
+    {
+      id: 'byte-6',
+      type: 'did_you_know',
+      title: 'Mumbai\u2019s Spice Code',
+      content: "Mumbai street vendors use a unique \"spice signal\" system. If you see them tap twice on the side of their cart, they\u2019re adding extra spice to your dish without asking—a local insider move!",
+      image: 'https://images.unsplash.com/photo-1596797038530-2c107ee3a2c8?ixlib=rb-4.0.3',
+      emoji: '🌶️',
+    },
+    {
+      id: 'byte-7',
+      type: 'fun_fact',
+      title: 'Cutting Chai Origins',
+      content: "\"Cutting chai\" (half cup of strong tea) got its name during British rule when workers had just enough time for half a tea during short factory breaks. Now it\u2019s a Mumbai institution!",
+      image: 'https://images.unsplash.com/photo-1571805423089-2b6ffeca2c0e?ixlib=rb-4.0.3',
+      emoji: '🍵',
     },
   ];
 
@@ -448,6 +521,174 @@ export default function TouristSpecialScreen() {
   // Shuffle itinerary
   const shuffleItinerary = () => {
     generatePersonalItinerary();
+  };
+
+  // Render a cultural byte card
+  const renderCulturalByteCard = ({ item }: { item: CulturalByte }) => {
+    // Define background color based on type
+    const getBgColor = () => {
+      switch (item.type) {
+        case 'fun_fact':
+          return 'rgba(255,82,0,0.05)';
+        case 'vendor_story':
+          return 'rgba(76,175,80,0.05)';
+        case 'did_you_know':
+          return 'rgba(33,150,243,0.05)';
+        default:
+          return 'rgba(255,82,0,0.05)';
+      }
+    };
+
+    // Define border color based on type
+    const getBorderColor = () => {
+      switch (item.type) {
+        case 'fun_fact':
+          return '#FF5200';
+        case 'vendor_story':
+          return '#4CAF50';
+        case 'did_you_know':
+          return '#2196F3';
+        default:
+          return '#FF5200';
+      }
+    };
+
+    // Define title prefix based on type
+    const getTitlePrefix = () => {
+      switch (item.type) {
+        case 'fun_fact':
+          return '🎯 Fun Fact';
+        case 'vendor_story':
+          return '👨‍🍳 Vendor Story';
+        case 'did_you_know':
+          return '💡 Did You Know?';
+        default:
+          return '';
+      }
+    };
+
+    const cardWidth = Dimensions.get('window').width * 0.75;
+
+    return (
+      <View style={{
+        width: cardWidth,
+        marginRight: 16,
+        borderRadius: 16,
+        backgroundColor: '#fff',
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        borderLeftWidth: 5,
+        borderLeftColor: getBorderColor(),
+      }}>
+        <View style={{ position: 'relative' }}>
+          <Image 
+            source={{ uri: item.image }} 
+            style={{ 
+              width: '100%', 
+              height: 120, 
+              borderTopLeftRadius: 12, 
+              borderTopRightRadius: 12 
+            }} 
+          />
+          <View style={{
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            borderRadius: 20,
+            width: 40,
+            height: 40,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+            <Text style={{ fontSize: 20 }}>{item.emoji}</Text>
+          </View>
+        </View>
+        
+        <View style={{ padding: 16, backgroundColor: getBgColor() }}>
+          <Text style={{ 
+            fontSize: 12, 
+            color: getBorderColor(),
+            fontWeight: 'bold',
+            marginBottom: 4 
+          }}>
+            {getTitlePrefix()}
+          </Text>
+          
+          <Text style={{ 
+            fontSize: 16, 
+            fontWeight: 'bold', 
+            color: '#333',
+            marginBottom: 8 
+          }}>
+            {item.title}
+          </Text>
+          
+          <Text style={{ 
+            fontSize: 13, 
+            color: '#666',
+            lineHeight: 18,
+            marginBottom: 12 
+          }}>
+            {item.content}
+          </Text>
+          
+          {item.relatedPlace && (
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginBottom: 12,
+              backgroundColor: 'rgba(0,0,0,0.05)',
+              paddingVertical: 4,
+              paddingHorizontal: 8,
+              borderRadius: 12,
+            }}>
+              <Ionicons name="location-outline" size={14} color={getBorderColor()} />
+              <Text style={{ marginLeft: 4, color: '#666', fontSize: 12 }}>
+                Related to: {item.relatedPlace}
+              </Text>
+            </View>
+          )}
+          
+          <View style={{
+            flexDirection: 'row',
+            justifyContent: 'flex-start',
+            borderTopWidth: 1,
+            borderTopColor: 'rgba(0,0,0,0.05)',
+            paddingTop: 12,
+          }}>
+            <TouchableOpacity style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginRight: 16,
+              backgroundColor: '#fff',
+              paddingVertical: 4,
+              paddingHorizontal: 8,
+              borderRadius: 20,
+            }}>
+              <Ionicons name="bookmark-outline" size={16} color="#666" />
+              <Text style={{ marginLeft: 4, color: '#666', fontSize: 12 }}>Save</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#fff',
+              paddingVertical: 4,
+              paddingHorizontal: 8,
+              borderRadius: 20,
+            }}>
+              <Ionicons name="share-social-outline" size={16} color="#666" />
+              <Text style={{ marginLeft: 4, color: '#666', fontSize: 12 }}>Share</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
   };
 
   if (loading) {
@@ -780,16 +1021,55 @@ export default function TouristSpecialScreen() {
           )}
         </View>
 
-        {/* Itineraries Section */}
-        <View style={styles.itinerariesSection}>
-          <Text style={styles.sectionTitle}>Your Personalized Itineraries</Text>
+        {/* Cultural Bytes Section */}
+        <View style={styles.culturalBytesSection}>
+          <Text style={styles.sectionTitle}>🎭 Cultural Bytes</Text>
+          <Text style={{
+            fontSize: 14,
+            color: '#666',
+            marginBottom: 16,
+            lineHeight: 20,
+          }}>
+            Discover the stories, culture and history behind Mumbai's iconic street food
+          </Text>
+          
           <FlatList
-            data={itineraries}
-            renderItem={renderItineraryCard}
+            data={culturalBytes}
+            renderItem={renderCulturalByteCard}
             keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-            contentContainerStyle={styles.itinerariesList}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingVertical: 10 }}
+            snapToAlignment="start"
+            snapToInterval={Dimensions.get('window').width * 0.75 + 16}
+            decelerationRate="fast"
           />
+          
+          <View style={{
+            backgroundColor: '#fff',
+            borderRadius: 16,
+            padding: 24,
+            marginTop: 24,
+            marginBottom: 8,
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 2,
+            borderLeftWidth: 3,
+            borderLeftColor: '#FF5200',
+          }}>
+            <Text style={{
+              fontSize: 16,
+              color: '#333',
+              fontStyle: 'italic',
+              textAlign: 'center',
+              lineHeight: 24,
+            }}>
+              "Every bite has a story – yours just began in Mumbai." ✨
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -1344,5 +1624,97 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     marginLeft: 8,
+  },
+  culturalBytesSection: {
+    marginHorizontal: 16,
+    marginBottom: 24,
+  },
+  culturalBytesList: {
+    paddingBottom: 20,
+  },
+  culturalByteCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  culturalByteImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  culturalByteOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  culturalByteContent: {
+    flex: 1,
+  },
+  culturalByteEmoji: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  culturalByteType: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  culturalByteTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  culturalByteText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  culturalByteRelatedPlace: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  culturalByteRelatedPlaceText: {
+    marginLeft: 4,
+    color: '#666',
+  },
+  culturalByteSocialActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  culturalByteSocialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  culturalByteSocialButtonText: {
+    marginLeft: 4,
+    color: '#666',
+  },
+  culturalBytesSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+  },
+  culturalBytesClosing: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 16,
+  },
+  culturalBytesClosingText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
   },
 });

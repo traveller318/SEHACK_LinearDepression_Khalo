@@ -25,7 +25,6 @@ import {
   Feather,
   MaterialCommunityIcons,
 } from '@expo/vector-icons'
-import Slider from '@react-native-community/slider'
 import * as Location from 'expo-location'
 import { useAuth } from '../../contexts/AuthContext'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -51,6 +50,64 @@ type Post = {
   userVote?: 'up' | 'down' | null
   comments?: Comment[]
 }
+
+// Create a RadiusButton component to handle individual button animations
+const RadiusButton = ({ value, isActive, onPress }: { value: number; isActive: boolean; onPress: () => void }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  
+  const handlePress = () => {
+    // Animate button press
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.9,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1.05,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      })
+    ]).start();
+    
+    onPress();
+  };
+  
+  return (
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <TouchableOpacity
+        style={[
+          styles.radiusButton,
+          isActive && styles.radiusButtonActive
+        ]}
+        onPress={handlePress}
+        activeOpacity={0.7}
+      >
+        <Text 
+          style={[
+            styles.radiusButtonText,
+            isActive && styles.radiusButtonTextActive
+          ]}
+        >
+          {value} km
+        </Text>
+        {isActive && (
+          <LinearGradient
+            colors={['#FFDED0', '#FFC0A6']}
+            start={[0, 0]}
+            end={[1, 1]}
+            style={styles.activeRadiusBackground}
+          />
+        )}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
 
 // Create a dedicated Post component to fix the hooks issue
 const PostItem = React.memo(({ item, index, handleVote, formatDate, toggleComments, showComments }: 
@@ -875,87 +932,83 @@ export default function CommunityScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header with Animated Background */}
-      <Animated.View 
-        style={[
-          styles.header,
-          {
-            opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }],
-          },
-        ]}
-      >
-        <LinearGradient
-          colors={['#FF8A5B', '#FF5200']}
-          start={[0, 0]}
-          end={[1, 0]}
-          style={styles.headerGradient}
+      {/* Fixed Header Container - This won't scroll */}
+      <View style={styles.fixedHeaderContainer}>
+        {/* Header with Animated Background */}
+        <Animated.View 
+          style={[
+            styles.header,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }],
+            },
+          ]}
         >
-          <Text style={styles.headerTitle}>Community</Text>
-        </LinearGradient>
-      </Animated.View>
+          <LinearGradient
+            colors={['#FF8A5B', '#FF5200']}
+            start={[0, 0]}
+            end={[1, 0]}
+            style={styles.headerGradient}
+          >
+            <Text style={styles.headerTitle}>Community</Text>
+          </LinearGradient>
+        </Animated.View>
 
-      {/* Radius Selector with improved UI */}
-      <Animated.View 
-        style={[
-          styles.radiusContainer,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: Animated.multiply(scrollY, 0.1) }],
-          },
-        ]}
-      >
-        <View style={styles.radiusLabelContainer}>
-          <MaterialIcons name="explore" size={20} color="#FF5200" />
-          <Text style={styles.radiusLabel}>Discovery Radius: {radius} km</Text>
-        </View>
-        <Slider
-          style={{ width: '100%', height: 40 }}
-          minimumValue={1}
-          maximumValue={10}
-          step={1}
-          value={radius}
-          onValueChange={handleRadiusChange}
-          minimumTrackTintColor="#FF5200"
-          maximumTrackTintColor="#FFDED0"
-          thumbTintColor="#FF5200"
-        />
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: -8 }}>
-          <Text style={{ fontSize: 12, color: '#999' }}>1 km</Text>
-          <Text style={{ fontSize: 12, color: '#999' }}>10 km</Text>
-        </View>
-      </Animated.View>
-
-      {/* Category Tabs with improved UI */}
-      <View style={styles.categoryTabsContainer}>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryTabs}
+        {/* Radius Selector with improved UI - now using buttons instead of slider */}
+        <Animated.View 
+          style={[
+            styles.radiusContainer,
+            { opacity: fadeAnim }
+          ]}
         >
-          {['Recent', 'Most Liked', 'Important', 'Others'].map((category) => (
-            <TouchableOpacity
-              key={category}
-              style={[
-                styles.categoryTab,
-                activeCategory === category && styles.activeTab
-              ]}
-              onPress={() => setActiveCategory(category)}
-            >
-              <Text 
+          <View style={styles.radiusLabelContainer}>
+            <MaterialIcons name="explore" size={20} color="#FF5200" />
+            <Text style={styles.radiusLabel}>Discovery Radius</Text>
+          </View>
+          
+          <View style={styles.radiusButtonsContainer}>
+            {[1, 2, 5, 7, 10].map((radiusValue) => (
+              <RadiusButton
+                key={radiusValue}
+                value={radiusValue}
+                isActive={radius === radiusValue}
+                onPress={() => handleRadiusChange(radiusValue)}
+              />
+            ))}
+          </View>
+        </Animated.View>
+
+        {/* Category Tabs with improved UI */}
+        <View style={styles.categoryTabsContainer}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryTabs}
+          >
+            {['Recent', 'Most Liked', 'Important', 'Others'].map((category) => (
+              <TouchableOpacity
+                key={category}
                 style={[
-                  styles.categoryTabText,
-                  activeCategory === category && styles.activeTabText
+                  styles.categoryTab,
+                  activeCategory === category && styles.activeTab
                 ]}
+                onPress={() => setActiveCategory(category)}
               >
-                {category}
-              </Text>
-              {activeCategory === category && (
-                <View style={styles.activeTabIndicator} />
-              )}
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                <Text 
+                  style={[
+                    styles.categoryTabText,
+                    activeCategory === category && styles.activeTabText
+                  ]}
+                >
+                  {category}
+                </Text>
+                {activeCategory === category && (
+                  <View style={styles.activeTabIndicator} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
       </View>
 
       {/* Scrollable content - only the posts will scroll */}
@@ -1173,6 +1226,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 4,
+    paddingBottom: 8,
   },
   scrollableContent: {
     flex: 1,
@@ -1204,7 +1258,7 @@ const styles = StyleSheet.create({
   },
   radiusContainer: {
     paddingHorizontal: 20,
-    paddingVertical: 18,
+    paddingVertical: 14,
     backgroundColor: 'white',
     marginHorizontal: 16,
     marginBottom: 16,
@@ -1218,7 +1272,7 @@ const styles = StyleSheet.create({
   radiusLabelContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   radiusLabel: {
     fontSize: 16,
@@ -1228,28 +1282,47 @@ const styles = StyleSheet.create({
   },
   radiusButtonsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-evenly', 
     alignItems: 'center',
+    paddingVertical: 4,
   },
   radiusButton: {
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 12,
-    backgroundColor: '#f0f0f0',
-    marginHorizontal: 4,
+    backgroundColor: '#f7f7f7',
     borderWidth: 1,
     borderColor: '#e0e0e0',
     minWidth: 58,
     alignItems: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+    elevation: 2,
+    marginHorizontal: 4,
   },
   radiusButtonActive: {
-    backgroundColor: '#FFF0EB',
     borderColor: '#FF5200',
+    backgroundColor: '#FFF0EB',
+    elevation: 4,
+    shadowColor: '#FF5200',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
+  activeRadiusBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 12,
+    opacity: 0.2,
   },
   radiusButtonText: {
     fontSize: 14,
     fontWeight: '500',
     color: '#666',
+    zIndex: 1,
   },
   radiusButtonTextActive: {
     color: '#FF5200',
