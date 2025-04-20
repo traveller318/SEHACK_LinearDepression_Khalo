@@ -12,6 +12,7 @@ import {
   FlatList,
   Dimensions,
   Linking,
+  SafeAreaView,
 } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'expo-router'
@@ -23,6 +24,7 @@ import { checkIfVendorProfileExists } from '../../lib/vendorProfileHelpers'
 import { LinearGradient } from 'expo-linear-gradient'
 import * as ImagePicker from 'expo-image-picker'
 import * as Location from 'expo-location'
+import HygieneReportModal from '../components/HygieneReportModal'
 
 const { width } = Dimensions.get('window')
 
@@ -81,6 +83,9 @@ export default function VendorDashboard() {
     }[]
   >([])
   const [formLoading, setFormLoading] = useState(false)
+
+  const [showHygieneReport, setShowHygieneReport] = useState(false)
+  const [selectedStall, setSelectedStall] = useState<Stall | null>(null)
 
   const handleSignOut = async () => {
     try {
@@ -480,6 +485,31 @@ export default function VendorDashboard() {
     const hygieneScore = item.hygiene_score || 0
     const isVerified = item.is_verified || false
 
+    // Mock hygiene report data (replace with real data in production)
+    const mockReportData = {
+      good_practices: [
+        "Regular cleaning schedule followed",
+        "Proper food storage practices",
+        "Staff follows hygiene protocols"
+      ],
+      issues_found: [
+        "Some equipment needs maintenance",
+        "Minor cleaning issues in corners"
+      ],
+      recommendations: [
+        "Implement daily cleaning checklist",
+        "Schedule regular deep cleaning",
+        "Update staff training on hygiene practices"
+      ],
+      overall_summary: "Overall, the stall maintains good hygiene standards with some minor improvements needed."
+    }
+
+    // Function to handle opening hygiene report
+    const handleOpenHygieneReport = () => {
+      setSelectedStall(item)
+      setShowHygieneReport(true)
+    }
+
     return (
       <TouchableOpacity
         style={styles.stallCard}
@@ -499,14 +529,21 @@ export default function VendorDashboard() {
           </View>
           <Text style={styles.stallCuisine}>{item.cuisine}</Text>
           <View style={styles.stallFooter}>
-            <View style={styles.hygieneContainer}>
+            <TouchableOpacity 
+              style={styles.hygieneButton}
+              onPress={(e) => {
+                e.stopPropagation()
+                handleOpenHygieneReport()
+              }}
+            >
               <MaterialIcons
                 name="cleaning-services"
                 size={16}
                 color="#4CAF50"
               />
               <Text style={styles.hygieneText}>{hygieneScore}/5</Text>
-            </View>
+              <Text style={styles.viewReportText}>View Report</Text>
+            </TouchableOpacity>
             <Text style={styles.createdDate}>
               {new Date(item.created_at).toLocaleDateString()}
             </Text>
@@ -687,7 +724,7 @@ export default function VendorDashboard() {
 
   // Show dashboard with vendor profile data
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Vendor Dashboard</Text>
         <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
@@ -753,7 +790,33 @@ export default function VendorDashboard() {
       </ScrollView>
 
       {renderStallModal()}
-    </View>
+
+      {/* Hygiene Report Modal */}
+      {selectedStall && (
+        <HygieneReportModal
+          visible={showHygieneReport}
+          onClose={() => setShowHygieneReport(false)}
+          hygieneScore={selectedStall.hygiene_score || 0}
+          reportData={{
+            good_practices: [
+              "Regular cleaning schedule followed",
+              "Proper food storage practices",
+              "Staff follows hygiene protocols"
+            ],
+            issues_found: [
+              "Some equipment needs maintenance",
+              "Minor cleaning issues in corners"
+            ],
+            recommendations: [
+              "Implement daily cleaning checklist",
+              "Schedule regular deep cleaning",
+              "Update staff training on hygiene practices"
+            ],
+            overall_summary: "Overall, the stall maintains good hygiene standards with some minor improvements needed."
+          }}
+        />
+      )}
+    </SafeAreaView>
   )
 }
 
@@ -883,19 +946,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  hygieneContainer: {
+  hygieneButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#e8f5e9',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 4,
+    borderRadius: 12,
   },
   hygieneText: {
     fontSize: 12,
     color: '#4CAF50',
+    fontWeight: '600',
     marginLeft: 4,
-    fontWeight: 'bold',
+  },
+  viewReportText: {
+    fontSize: 12,
+    color: '#3498db',
+    fontWeight: '500',
+    marginLeft: 6,
+    textDecorationLine: 'underline',
   },
   createdDate: {
     fontSize: 12,
