@@ -12,92 +12,106 @@ import {
 import { TinderCard } from 'rn-tinder-card'
 import { LinearGradient } from 'expo-linear-gradient'
 import { FontAwesome5 } from '@expo/vector-icons'
+// Import all images at the top of your file
+const ramen = require('../../assets/images/ramen.png');
+const bakery = require('../../assets/images/bakery.png');
+const coffee = require('../../assets/images/coffee.png');
+const thali = require('../../assets/images/thali.png');
+const pasta = require('../../assets/images/pasta.png');
+const foodtruck = require('../../assets/images/foodtruck.png');
+const sushi = require('../../assets/images/sushi.png');
+const pani = require('../../assets/images/pani.png');
+const icecream = require('../../assets/images/icecream.png');
+const shawarma = require('../../assets/images/shawarma.png');
 
+
+// import bakery from '../../assets/images/bakery.png';
+// import coffee from '../../assets/images/coffee.png';
+// import thali from '../../assets/images/thali.png';
+// import pasta from '../../assets/images/pasta.png';
+// import foodtruck from '../../assets/images/foodtruck.png';
+// import sushi from '../../assets/images/sushi.png';
+// import pani from '../../assets/images/pani.png';
+// import icecream from '../../assets/images/icecream.png';
+// import shawarma from '../../assets/images/shawarma.png';
 const { width, height } = Dimensions.get('window')
 const CARD_WIDTH = width * 0.9
 const CARD_HEIGHT = height * 0.6
+
+
+
 
 // Sample food data - replace with your actual data
 const FOOD_DATA = [
   {
     id: '1',
-    name: 'Chicken Rice',
-    image:
-      'https://images.unsplash.com/photo-1569058242567-93de6f36f8eb?q=80&w=2070',
-    description: 'Traditional Hainanese chicken rice',
-    cuisine: 'Chinese',
+    name: 'Kokoshi Ramen',
+    image: 'https://images.pexels.com/photos/17593640/pexels-photo-17593640/free-photo-of-soup-with-egg.jpeg?auto=compress&cs=tinysrgb&w=600',
+    description: 'Japanese noodle soup with broth and toppings.',
+    cuisine: 'Japanese',
   },
   {
     id: '2',
-    name: 'Laksa',
-    image:
-      'https://images.unsplash.com/photo-1570275239925-4af0aa89617b?q=80&w=2071',
-    description: 'Spicy coconut noodle soup',
-    cuisine: 'Peranakan',
+    name: 'Bliss Bakes',
+    image: 'https://images.pexels.com/photos/1674064/pexels-photo-1674064.jpeg?auto=compress&cs=tinysrgb&w=600', 
+    description: 'Sweet baked dessert, often decorated.',
+    cuisine: 'Bakery',
   },
   {
     id: '3',
-    name: 'Char Kway Teow',
-    image:
-      'https://images.unsplash.com/photo-1574484284002-952d92456975?q=80&w=1974',
-    description: 'Stir-fried rice noodles with prawn and Chinese sausage',
-    cuisine: 'Chinese',
+    name: 'Chauhan Coffee Stall',
+    image: 'https://images.pexels.com/photos/312418/pexels-photo-312418.jpeg?auto=compress&cs=tinysrgb&w=600',
+    description: 'Brewed beverage made from roasted coffee beans.',
+    cuisine: 'Cafe',
   },
   {
     id: '4',
-    name: 'Roti Prata',
-    image:
-      'https://images.unsplash.com/photo-1565557623262-b51c2513a641?q=80&w=2071',
+    name: 'Paaji Da Dhaba',
+    image: 'https://images.pexels.com/photos/8148149/pexels-photo-8148149.jpeg?auto=compress&cs=tinysrgb&w=600',
     description: 'Crispy flatbread served with curry',
-    cuisine: 'Indian',
+    cuisine: 'North Indian',
   },
   {
     id: '5',
-    name: 'Nasi Lemak',
-    image:
-      'https://images.unsplash.com/photo-1626409595896-30adce1f769a?q=80&w=2070',
-    description: 'Fragrant rice dish cooked in coconut milk',
-    cuisine: 'Malay',
+    name: 'Si Nonna',
+    image: 'https://images.pexels.com/photos/1373915/pexels-photo-1373915.jpeg?auto=compress&cs=tinysrgb&w=600',
+    description: 'Italian pasta dish with various sauces',
+    cuisine: 'Italian',
   },
   {
     id: '6',
-    name: 'Satay',
-    image:
-      'https://images.unsplash.com/photo-1529563021893-cc68e7419ca3?q=80&w=2070',
-    description: 'Grilled meat skewers with peanut sauce',
-    cuisine: 'Malay/Indonesian',
+    name: 'Pablo Taco Truck',
+    image: 'https://images.pexels.com/photos/4609255/pexels-photo-4609255.jpeg?auto=compress&cs=tinysrgb&w=600',
+    description: 'Mexican tacos with various fillings',
+    cuisine: 'Mexican',
   },
   {
     id: '7',
-    name: 'Chili Crab',
-    image:
-      'https://images.unsplash.com/photo-1623653407811-f3b1a8149382?q=80&w=2070',
-    description: 'Crab in a spicy, sweet and savory tomato-based sauce',
-    cuisine: 'Singaporean',
+    name: 'Yang Chow Sushi Bar',
+    image: 'https://images.pexels.com/photos/1028427/pexels-photo-1028427.jpeg?auto=compress&cs=tinysrgb&w=600',
+    description: 'Japanese sushi with fresh fish and rice',
+    cuisine: 'Japanese',
   },
   {
     id: '8',
-    name: 'Hokkien Mee',
-    image:
-      'https://images.unsplash.com/photo-1569058242567-93de6f36f8eb?q=80&w=2070',
-    description: 'Stir-fried noodles with prawns, squid, and pork',
-    cuisine: 'Chinese',
+    name: 'Ashoks Pani Puri Stall',
+    image: 'https://images.pexels.com/photos/13041629/pexels-photo-13041629.jpeg?auto=compress&cs=tinysrgb&w=600',
+    description: 'Crispy puris filled with spicy water and fillings',
+    cuisine: 'Indian',
   },
   {
     id: '9',
-    name: 'Carrot Cake (Chai Tow Kway)',
-    image:
-      'https://images.unsplash.com/photo-1603133872878-684f208fb84b?q=80&w=2070',
-    description: 'Fried radish cake with eggs and preserved radish',
-    cuisine: 'Chinese',
+    name: 'Chandrakanth Ice Cream Parlour',
+    image: 'https://images.pexels.com/photos/1346341/pexels-photo-1346341.jpeg?auto=compress&cs=tinysrgb&w=600',
+    description: 'Frozen dessert made from cream and flavors',
+    cuisine: 'Dessert',
   },
   {
     id: '10',
-    name: 'Fish Head Curry',
-    image:
-      'https://images.unsplash.com/photo-1613844237766-e49adcb45ec7?q=80&w=2077',
-    description: 'Fish head cooked in curry with vegetables',
-    cuisine: 'Indian-Singaporean',
+    name: 'Saleems Shawarma Corner',
+    image: 'https://images.pexels.com/photos/5602502/pexels-photo-5602502.jpeg?auto=compress&cs=tinysrgb&w=600',
+    description: 'Middle Eastern wrap with meat and vegetables',
+    cuisine: 'Middle Eastern',
   },
 ]
 
