@@ -597,31 +597,31 @@ export default function DashboardScreen() {
           >
             <StallCard
               name="Foodie Heaven"
-              image="https://via.placeholder.com/150/ffffff/000000?text=FH"
+              image="https://images.pexels.com/photos/1640772/pexels-photo-1640772.jpeg?auto=compress&cs=tinysrgb&w=600"
               rating={4.7}
               hygiene={5}
             />
             <StallCard
               name="Spice Corner"
-              image="https://via.placeholder.com/150/ffffff/000000?text=SC"
+              image="https://images.pexels.com/photos/3054690/pexels-photo-3054690.jpeg?auto=compress&cs=tinysrgb&w=600"
               rating={4.5}
               hygiene={4}
             />
             <StallCard
               name="Fresh & Tasty"
-              image="https://via.placeholder.com/150/ffffff/000000?text=FT"
+              image="https://images.pexels.com/photos/1152237/pexels-photo-1152237.jpeg?auto=compress&cs=tinysrgb&w=600"
               rating={4.8}
               hygiene={5}
             />
             <StallCard
               name="Quick Bites"
-              image="https://via.placeholder.com/150/ffffff/000000?text=QB"
+              image="https://images.pexels.com/photos/3620233/pexels-photo-3620233.jpeg?auto=compress&cs=tinysrgb&w=600"
               rating={4.3}
               hygiene={4}
             />
             <StallCard
               name="Street Delights"
-              image="https://via.placeholder.com/150/ffffff/000000?text=SD"
+              image="https://images.pexels.com/photos/2010701/pexels-photo-2010701.jpeg?auto=compress&cs=tinysrgb&w=600"
               rating={4.6}
               hygiene={4}
             />
