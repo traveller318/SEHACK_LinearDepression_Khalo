@@ -406,6 +406,8 @@ export default function DashboardScreen() {
     chinese: require('./icons/noodles.png'),
     north_indian: require('./icons/turban.png'),
     italian: require('./icons/pizza.png'),
+    fries:require('./icons/fries.png'),
+    sushi:require('./icons/sushi.png'),
   }
 
   return (
@@ -515,10 +517,16 @@ export default function DashboardScreen() {
                   markerImage = icons.chinese
                 }
                 if (stall.cuisine === 'Italian') {
-                  markerImage = icons.north_indian
+                  markerImage = icons.italian
                 }
                 if (stall.cuisine === 'North Indian') {
                   markerImage = icons.north_indian
+                }
+                if (stall.cuisine === 'Quick Bites') {
+                  markerImage = icons.fries
+                }
+                if (stall.cuisine === 'Japenese') {
+                  markerImage = icons.sushi
                 }
 
                 return (
