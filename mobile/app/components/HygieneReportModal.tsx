@@ -27,14 +27,17 @@ interface HygieneReportModalProps {
 }
 
 const ScoreIndicator = ({ score }: { score: number }) => {
+  // Ensure score is a valid number and handle edge cases
+  const safeScore = typeof score === 'number' && !isNaN(score) ? score : 3.0;
+  
   // Calculate the percentage for the circular progress
-  const percentage = (score / 5) * 100;
+  const percentage = (safeScore / 5) * 100;
   
   // Determine color based on score
   const getColor = () => {
-    if (score >= 4) return ['#4CAF50', '#2E7D32'];
-    if (score >= 3) return ['#8BC34A', '#558B2F'];
-    if (score >= 2) return ['#FFC107', '#FFA000'];
+    if (safeScore >= 4) return ['#4CAF50', '#2E7D32'];
+    if (safeScore >= 3) return ['#8BC34A', '#558B2F'];
+    if (safeScore >= 2) return ['#FFC107', '#FFA000'];
     return ['#F44336', '#D32F2F'];
   };
 
@@ -48,7 +51,7 @@ const ScoreIndicator = ({ score }: { score: number }) => {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <Text style={styles.scoreText}>{score.toFixed(1)}</Text>
+        <Text style={styles.scoreText}>{safeScore.toFixed(1)}</Text>
         <Text style={styles.scoreMaxText}>/5</Text>
       </LinearGradient>
       <Text style={styles.scoreLabel}>Hygiene Score</Text>

@@ -149,6 +149,12 @@ const generateRandomAvgPrice = () => {
   return `${prices[Math.floor(Math.random() * prices.length)]} for one`
 }
 
+// Function to generate random hygiene score
+const generateRandomHygieneScore = () => {
+  // Generate a score between 2.5 and 5.0 with one decimal place
+  return Math.round((Math.random() * 2.5 + 2.5) * 10) / 10
+}
+
 // Function to generate random hygiene report
 const generateRandomHygieneReport = () => {
   // Select 3-5 random items from each category
@@ -317,6 +323,11 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     marginLeft: 4,
     fontWeight: '500',
+  },
+  miniHygieneStars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 4,
   },
   infoRow: {
     flexDirection: 'row',
@@ -588,9 +599,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 8,
   },
-  viewAllText: {
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  seeAllButtonText: {
     color: '#FF5200',
-    marginRight: 8,
+    marginRight: 4,
   },
   infoTabContainer: {
     padding: 16,
@@ -967,6 +982,61 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 4,
   },
+  recommendedItem: {
+    width: width / 2 - 24,
+    marginLeft: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  recommendedItemImage: {
+    width: '100%',
+    height: 120,
+    resizeMode: 'cover',
+  },
+  recommendedItemContent: {
+    padding: 12,
+  },
+  recommendedItemName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  recommendedItemPrice: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#FF5200',
+    marginVertical: 4,
+  },
+  recommendedItemRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  recommendedItemsContainer: {
+    paddingVertical: 16,
+    backgroundColor: '#f9f9f9',
+  },
+  recommendedItemsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  recommendedItemsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
 })
 
 const StallPage = () => {
@@ -976,7 +1046,7 @@ const StallPage = () => {
       name: 'Chicken Biryani',
       description: 'Flavorful rice dish with spiced chicken',
       price: '₹180',
-      image: 'https://source.unsplash.com/random/300x200/?biryani',
+      image: 'https://tse4.mm.bing.net/th?id=OIP.Iq3Ly_QaB394b0G5cmPgrQHaE8&pid=Api&P=0&h=180',
       isVeg: false,
       isRecommended: true,
       rating: 4.8,
@@ -1049,9 +1119,10 @@ const StallPage = () => {
     distance: '1.2 km',
     openingTime: generateRandomOpeningHours(),
     phoneNumber: '+91 98765 43210',
-    hygieneScore: 4.2,
+    hygieneScore: generateRandomHygieneScore(),
     avgPrice: generateRandomAvgPrice(),
   })
+  const [stallImages, setStallImages] = useState<string[]>(STALL_IMAGES)
   const headerHeight = 250
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, headerHeight - 60],
@@ -1089,6 +1160,299 @@ const StallPage = () => {
     },
   ])
 
+  // Hard-coded data for different stalls
+  const hardCodedStallData = {
+    '1': {
+      totalReviews: 342,
+      distance: '0.8 km',
+      phoneNumber: '+91 87654 32109'
+    },
+    '2': {
+      totalReviews: 187,
+      distance: '1.5 km',
+      phoneNumber: '+91 76543 21098'
+    },
+    '3': {
+      totalReviews: 521,
+      distance: '0.6 km',
+      phoneNumber: '+91 65432 10987'
+    },
+    '4': {
+      totalReviews: 93,
+      distance: '2.1 km',
+      phoneNumber: '+91 54321 09876'
+    },
+    '5': {
+      totalReviews: 267,
+      distance: '1.7 km',
+      phoneNumber: '+91 43210 98765'
+    }
+  }
+
+  // Hard-coded menu items for each stall
+  const hardCodedMenuItems = {
+    '1': [
+      {
+        id: '1',
+        name: 'Chicken Biryani Special',
+        description: 'Our signature rice dish with perfectly spiced chicken',
+        price: '₹220',
+        image: 'https://source.unsplash.com/random/300x200/?biryani,1',
+        isVeg: false,
+        isRecommended: true,
+        rating: 4.9,
+      },
+      {
+        id: '2',
+        name: 'Butter Paneer Masala',
+        description: 'Rich and creamy paneer curry with aromatic spices',
+        price: '₹180',
+        image: 'https://source.unsplash.com/random/300x200/?paneer,1',
+        isVeg: true,
+        isRecommended: true,
+        rating: 4.8,
+      },
+      {
+        id: '3',
+        name: 'Garlic Naan',
+        description: 'Soft bread with garlic flavor, perfect with curries',
+        price: '₹50',
+        image: 'https://source.unsplash.com/random/300x200/?naan,1',
+        isVeg: true,
+        isRecommended: false,
+        rating: 4.6,
+      },
+      {
+        id: '4',
+        name: 'Dal Tadka',
+        description: 'Yellow lentils tempered with cumin and garlic',
+        price: '₹130',
+        image: 'https://source.unsplash.com/random/300x200/?dal,1',
+        isVeg: true,
+        isRecommended: false,
+        rating: 4.5,
+      },
+      {
+        id: '5',
+        name: 'Kulfi Falooda',
+        description: 'Traditional Indian ice cream with vermicelli and rose syrup',
+        price: '₹90',
+        image: 'https://source.unsplash.com/random/300x200/?icecream,1',
+        isVeg: true,
+        isRecommended: true,
+        rating: 4.7,
+      },
+    ],
+    '2': [
+      {
+        id: '1',
+        name: 'South Indian Thali',
+        description: 'Complete meal with variety of South Indian dishes',
+        price: '₹250',
+        image: 'https://source.unsplash.com/random/300x200/?thali,1',
+        isVeg: true,
+        isRecommended: true,
+        rating: 4.8,
+      },
+      {
+        id: '2',
+        name: 'Masala Dosa',
+        description: 'Crispy rice crepe filled with spiced potato mixture',
+        price: '₹120',
+        image: 'https://source.unsplash.com/random/300x200/?dosa,1',
+        isVeg: true,
+        isRecommended: true,
+        rating: 4.9,
+      },
+      {
+        id: '3',
+        name: 'Idli Sambar',
+        description: 'Steamed rice cakes served with lentil soup and chutney',
+        price: '₹80',
+        image: 'https://source.unsplash.com/random/300x200/?idli,1',
+        isVeg: true,
+        isRecommended: false,
+        rating: 4.7,
+      },
+      {
+        id: '4',
+        name: 'Medu Vada',
+        description: 'Crispy savory doughnut made from urad dal',
+        price: '₹60',
+        image: 'https://source.unsplash.com/random/300x200/?vada,1',
+        isVeg: true,
+        isRecommended: false,
+        rating: 4.5,
+      },
+      {
+        id: '5',
+        name: 'Filter Coffee',
+        description: 'Traditional South Indian coffee with chicory',
+        price: '₹40',
+        image: 'https://source.unsplash.com/random/300x200/?coffee,1',
+        isVeg: true,
+        isRecommended: true,
+        rating: 4.9,
+      },
+    ],
+    '3': [
+      {
+        id: '1',
+        name: 'Tandoori Chicken',
+        description: 'Chicken marinated in yogurt and spices, cooked in tandoor',
+        price: '₹280',
+        image: 'https://source.unsplash.com/random/300x200/?tandoorichicken,1',
+        isVeg: false,
+        isRecommended: true,
+        rating: 4.9,
+      },
+      {
+        id: '2',
+        name: 'Seekh Kebab',
+        description: 'Minced meat skewers with herbs and spices',
+        price: '₹220',
+        image: 'https://source.unsplash.com/random/300x200/?kebab,1',
+        isVeg: false,
+        isRecommended: true,
+        rating: 4.8,
+      },
+      {
+        id: '3',
+        name: 'Laccha Paratha',
+        description: 'Multi-layered flaky Indian bread',
+        price: '₹60',
+        image: 'https://source.unsplash.com/random/300x200/?paratha,1',
+        isVeg: true,
+        isRecommended: false,
+        rating: 4.6,
+      },
+      {
+        id: '4',
+        name: 'Malai Kofta',
+        description: 'Potato and paneer dumplings in a creamy sauce',
+        price: '₹180',
+        image: 'https://source.unsplash.com/random/300x200/?kofta,1',
+        isVeg: true,
+        isRecommended: false,
+        rating: 4.7,
+      },
+      {
+        id: '5',
+        name: 'Shahi Tukda',
+        description: 'Royal bread pudding with saffron and nuts',
+        price: '₹120',
+        image: 'https://source.unsplash.com/random/300x200/?dessert,1',
+        isVeg: true,
+        isRecommended: true,
+        rating: 4.8,
+      },
+    ],
+    '4': [
+      {
+        id: '1',
+        name: 'Hakka Noodles',
+        description: 'Indo-Chinese stir-fried noodles with vegetables',
+        price: '₹150',
+        image: 'https://source.unsplash.com/random/300x200/?noodles,1',
+        isVeg: true,
+        isRecommended: true,
+        rating: 4.7,
+      },
+      {
+        id: '2',
+        name: 'Chilli Chicken',
+        description: 'Spicy chicken stir-fried with bell peppers and onions',
+        price: '₹200',
+        image: 'https://source.unsplash.com/random/300x200/?chillichicken,1',
+        isVeg: false,
+        isRecommended: true,
+        rating: 4.8,
+      },
+      {
+        id: '3',
+        name: 'Manchurian',
+        description: 'Fried vegetable balls in spicy and tangy sauce',
+        price: '₹160',
+        image: 'https://source.unsplash.com/random/300x200/?manchurian,1',
+        isVeg: true,
+        isRecommended: false,
+        rating: 4.6,
+      },
+      {
+        id: '4',
+        name: 'Fried Rice',
+        description: 'Stir-fried rice with vegetables and soy sauce',
+        price: '₹140',
+        image: 'https://source.unsplash.com/random/300x200/?friedrice,1',
+        isVeg: true,
+        isRecommended: false,
+        rating: 4.5,
+      },
+      {
+        id: '5',
+        name: 'Honey Chilli Potato',
+        description: 'Crispy potato fingers tossed in sweet and spicy sauce',
+        price: '₹110',
+        image: 'https://source.unsplash.com/random/300x200/?potato,1',
+        isVeg: true,
+        isRecommended: true,
+        rating: 4.9,
+      },
+    ],
+    '5': [
+      {
+        id: '1',
+        name: 'Pav Bhaji',
+        description: 'Spiced mashed vegetables served with buttered buns',
+        price: '₹120',
+        image: 'https://source.unsplash.com/random/300x200/?pavbhaji,1',
+        isVeg: true,
+        isRecommended: true,
+        rating: 4.8,
+      },
+      {
+        id: '2',
+        name: 'Vada Pav',
+        description: 'Spicy potato fritter in a bun with chutneys',
+        price: '₹40',
+        image: 'https://source.unsplash.com/random/300x200/?vadapav,1',
+        isVeg: true,
+        isRecommended: true,
+        rating: 4.9,
+      },
+      {
+        id: '3',
+        name: 'Misal Pav',
+        description: 'Spicy sprouted lentil curry with bread rolls',
+        price: '₹90',
+        image: 'https://source.unsplash.com/random/300x200/?misal,1',
+        isVeg: true,
+        isRecommended: false,
+        rating: 4.7,
+      },
+      {
+        id: '4',
+        name: 'Kanda Bhaji',
+        description: 'Crispy onion fritters',
+        price: '₹60',
+        image: 'https://source.unsplash.com/random/300x200/?fritters,1',
+        isVeg: true,
+        isRecommended: false,
+        rating: 4.6,
+      },
+      {
+        id: '5',
+        name: 'Ragda Pattice',
+        description: 'Potato patties topped with white pea curry and chutneys',
+        price: '₹80',
+        image: 'https://source.unsplash.com/random/300x200/?pattice,1',
+        isVeg: true,
+        isRecommended: true,
+        rating: 4.8,
+      },
+    ],
+  }
+
   useEffect(() => {
     const fetchStallData = async () => {
       try {
@@ -1102,11 +1466,26 @@ const StallPage = () => {
           ...response,
           openingTime: generateRandomOpeningHours(),
           avgPrice: generateRandomAvgPrice(),
+          // Generate a random hygiene score if not provided
+          hygieneScore: response.hygieneScore || generateRandomHygieneScore()
+        }
+        
+        // Apply hard-coded values if they exist for this stall ID
+        if (hardCodedStallData[id as keyof typeof hardCodedStallData]) {
+          const hardCodedData = hardCodedStallData[id as keyof typeof hardCodedStallData];
+          updatedResponse.totalReviews = hardCodedData.totalReviews;
+          updatedResponse.distance = hardCodedData.distance;
+          updatedResponse.phoneNumber = hardCodedData.phoneNumber;
         }
         
         setStallData(updatedResponse)
         // Generate random hygiene report data when stall data is loaded
         setHygieneReportData(generateRandomHygieneReport())
+        
+        // Try to get better images if they exist
+        if (response.image_url) {
+          setStallImages([response.image_url, ...STALL_IMAGES.slice(0, 3)])
+        }
       } catch (err) {
         console.error('Error fetching stall data:', err)
         setIsLoading(false)
@@ -1117,10 +1496,25 @@ const StallPage = () => {
 
   useEffect(() => {
     const fetchMenuItems = async () => {
-      const response = await getMenuItems(id)
-      setMenuItems(response)
-      console.log('Menu items')
-      console.log(response)
+      try {
+        // Try to get menu items from API first
+        const response = await getMenuItems(id)
+        
+        // Override with hardcoded menu items if available for this stall ID
+        if (hardCodedMenuItems[id as keyof typeof hardCodedMenuItems]) {
+          console.log('Using hardcoded menu items for stall ID:', id)
+          setMenuItems(hardCodedMenuItems[id as keyof typeof hardCodedMenuItems])
+        } else {
+          console.log('Using API menu items')
+          setMenuItems(response)
+        }
+      } catch (err) {
+        console.error('Error fetching menu items:', err)
+        // Fallback to hardcoded menu items in case of error
+        if (hardCodedMenuItems[id as keyof typeof hardCodedMenuItems]) {
+          setMenuItems(hardCodedMenuItems[id as keyof typeof hardCodedMenuItems])
+        }
+      }
     }
     fetchMenuItems()
   }, [id])
@@ -1208,7 +1602,7 @@ const StallPage = () => {
             {ratingScore > 0 && (
               <View style={styles.averageRatingContainer}>
                 <Text style={styles.averageRatingValue}>
-                  {ratingScore}
+                  {ratingScore.toFixed(1)}
                 </Text>
                 <View style={styles.averageRatingStars}>
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -1258,7 +1652,7 @@ const StallPage = () => {
     return (
       <View style={styles.carouselContainer}>
         <FlatList
-          data={STALL_IMAGES}
+          data={stallImages}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
@@ -1290,6 +1684,11 @@ const StallPage = () => {
   }
 
   const renderStallInfo = () => {
+    // Get a safe hygiene score for display
+    const safeHygieneScore = typeof stallData.hygieneScore === 'number' && !isNaN(stallData.hygieneScore) 
+      ? stallData.hygieneScore 
+      : 4.0;
+      
     return (
       <View style={styles.stallInfoContainer}>
         <View style={styles.nameContainer}>
@@ -1317,7 +1716,18 @@ const StallPage = () => {
             onPress={() => setHygieneReportModalVisible(true)}
           >
             <MaterialIcons name="cleaning-services" size={16} color="#4CAF50" />
-            <Text style={styles.hygieneText}>{stallData.hygieneScore}/5</Text>
+            <Text style={styles.hygieneText}>{safeHygieneScore.toFixed(1)}/5</Text>
+            <View style={styles.miniHygieneStars}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <MaterialIcons
+                  key={star}
+                  name="star"
+                  size={10}
+                  color={star <= Math.round(safeHygieneScore) ? '#4CAF50' : '#e0e0e0'}
+                  style={{ marginHorizontal: 1 }}
+                />
+              ))}
+            </View>
             <Text style={styles.viewReportText}>View Report</Text>
           </TouchableOpacity>
         </View>
@@ -1482,6 +1892,68 @@ const StallPage = () => {
     )
   }
 
+  // To add your custom image links for recommended dishes:
+  // 1. Replace the 'image' property in the MENU_ITEMS array with your desired URLs
+  // 2. Or modify the source={{ uri: item.image }} in renderRecommendedMenuItem below
+  const renderRecommendedMenuItem = ({ item }: { item: (typeof MENU_ITEMS)[0] }) => {
+    return (
+      <View style={styles.recommendedItem}>
+        <Image 
+          source={{ 
+            uri: item.image 
+          }} 
+          style={styles.recommendedItemImage} 
+        />
+        <View style={styles.recommendedItemContent}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {item.isVeg ? (
+              <View style={styles.vegBadge}>
+                <View style={styles.vegSymbol} />
+              </View>
+            ) : (
+              <View style={styles.nonVegBadge}>
+                <View style={styles.nonVegSymbol} />
+              </View>
+            )}
+            <Text style={styles.recommendedItemName} numberOfLines={1}>{item.name}</Text>
+          </View>
+          <Text style={styles.recommendedItemPrice}>{item.price}</Text>
+          <View style={styles.recommendedItemRating}>
+            <MaterialIcons name="star" size={16} color="#FFD700" />
+            <Text style={{ fontSize: 14, marginLeft: 4 }}>{item.rating}</Text>
+          </View>
+        </View>
+      </View>
+    )
+  }
+
+  const renderRecommendedMenuItems = () => {
+    const recommendedItems = MENU_ITEMS.filter(item => item.isRecommended === true);
+    
+    if (recommendedItems.length === 0) return null;
+    
+    return (
+      <View style={styles.recommendedItemsContainer}>
+        <View style={styles.recommendedItemsHeader}>
+          <Text style={styles.recommendedItemsTitle}>Recommended Dishes</Text>
+          <TouchableOpacity style={styles.viewAllButton}>
+            <Text style={styles.seeAllButtonText}>View All</Text>
+            <MaterialIcons name="arrow-forward" size={16} color="#FF5200" />
+          </TouchableOpacity>
+        </View>
+        
+        <FlatList
+          data={recommendedItems}
+          renderItem={renderRecommendedMenuItem}
+          keyExtractor={item => item.id}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: 16 }}
+        />
+      </View>
+    );
+  }
+
   // Add this component to the reviews tab
   const renderReviews = () => {
     return (
@@ -1535,7 +2007,7 @@ const StallPage = () => {
         ))}
 
         <TouchableOpacity style={styles.viewAllReviews}>
-          <Text style={styles.viewAllText}>
+          <Text style={styles.seeAllButtonText}>
             View all {REVIEWS.length} reviews
           </Text>
           <MaterialIcons name="arrow-forward" size={20} color="#FF5200" />
@@ -1665,11 +2137,16 @@ const StallPage = () => {
   }
 
   const renderHygieneReportModal = () => {
+    // Get a safe hygiene score for the modal
+    const safeHygieneScore = typeof stallData.hygieneScore === 'number' && !isNaN(stallData.hygieneScore) 
+      ? stallData.hygieneScore 
+      : 4.0;
+      
     return (
       <HygieneReportModal
         visible={hygieneReportModalVisible}
         onClose={() => setHygieneReportModalVisible(false)}
-        hygieneScore={stallData.hygieneScore}
+        hygieneScore={safeHygieneScore}
         reportData={hygieneReportData}
       />
     )
@@ -1711,6 +2188,7 @@ const StallPage = () => {
 
         {activeTab === 'menu' && (
           <>
+            {renderRecommendedMenuItems()}
             {renderMenuCategories()}
             <View style={styles.menuList}>
               {MENU_ITEMS.map((item) => renderMenuItem({ item }))}
